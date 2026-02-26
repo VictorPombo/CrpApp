@@ -34,3 +34,18 @@ lib/
 ├── services/        # Serviços (mock de cursos, autenticação)
 ├── widgets/         # Componentes reutilizáveis (CourseCard, etc.)
 └── main.dart        # Ponto de entrada da aplicação
+
+## 👨‍💻 Autor
+
+Projeto desenvolvido por **Victor Pombo**.  
+Este repositório está em fase inicial e **não está aberto para contribuições públicas** no momento.  
+
+- 🌐 [GitHub](https://github.com/VictorPombo)   
+
+---
+
+## 📄 Licença
+
+Este projeto é de uso **restrito** e não está disponível sob licença pública neste momento.  
+A abertura do código e definição de licença poderão ser avaliadas futuramente.
+
