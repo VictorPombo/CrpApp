@@ -1,56 +1,36 @@
-# crp_cursos
+# 📚 CRP Cursos
 
-A new Flutter project.
+Aplicativo Flutter para gerenciamento e visualização de **Cursos de Normas Regulamentadoras (NRs)**.  
+O projeto foi desenvolvido com foco em usabilidade, responsividade e boas práticas de arquitetura.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 🚀 Funcionalidades
 
-A few resources to get you started if this is your first Flutter project:
+- Listagem de cursos de Normas Regulamentadoras (NR-10, NR-35, NR-12, etc.)
+- Pesquisa de cursos por nome ou código
+- Alternância entre **modo claro** e **modo escuro**
+- Navegação por abas: Início, Cursos e Perfil
+- Mock de serviços para simulação de dados
+- Estrutura modular com `models`, `providers`, `services` e `widgets`
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🛠️ Tecnologias Utilizadas
 
-## macOS development (dev workflow)
+- [Flutter](https://flutter.dev/)  
+- [Dart](https://dart.dev/)  
+- **StateNotifier** para gerenciamento de estado  
+- **SharedPreferences** para persistência simples  
+- Arquitetura baseada em **Providers**
 
-This repository currently encounters macOS codesign failures during the normal
-`flutter run -d macos` flow when extended attributes (Finder provenance, file
-provider metadata, etc.) are present inside the built `.app`. To make local
-development reliable while we fix the root cause, use the provided dev wrapper
-which builds without automatic codesigning, strips extended attributes from the
-built bundle, signs it ad-hoc and opens the app.
+---
 
-Usage — quick:
-
-```bash
-# from repo root
-./tools/run-macos-dev.sh
-```
-
-What the wrapper does:
-- runs `flutter pub get`
-- builds the macOS Runner via `xcodebuild` with `CODE_SIGNING_ALLOWED=NO`
-- cleans extended attributes from the resulting `.app`
-- ad-hoc codesigns the `.app` and opens it
-
-If you want to inspect whether a built `.app` contains problematic attributes
-before signing, run:
-
-```bash
-# inspect default debug app path
-./scripts/check_xattrs.sh
-
-# or point to a custom path
-./scripts/check_xattrs.sh /path/to/crp_cursos.app
-```
-
-Notes:
-- This is a developer-time workaround so you can preview UI changes quickly.
-- We'll keep working on a permanent fix so that `flutter run -d macos` works
-	directly. For now the wrapper is the most reliable way to view the app on
-	macOS without codesign failures.
-
+## 📂 Estrutura do Projeto
+lib/
+├── models/          # Modelos de dados (Course, AuthState, etc.)
+├── providers/       # Providers e Notifiers (Auth, Theme)
+├── screens/         # Telas principais (Home, Cursos, Perfil)
+├── services/        # Serviços (mock de cursos, autenticação)
+├── widgets/         # Componentes reutilizáveis (CourseCard, etc.)
+└── main.dart        # Ponto de entrada da aplicação
