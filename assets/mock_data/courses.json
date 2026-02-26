@@ -1,0 +1,62 @@
+[
+  {
+    "id": "nr10",
+    "code": "NR-10",
+    "title": "Segurança em Instalações Elétricas",
+    "description": "Curso básico e complementar para eletricidade",
+    "category": "Eletricidade",
+    "hours": 40,
+    "lessons_count": 12,
+    "progress": 0.25
+  },
+  {
+    "id": "nr35",
+    "code": "NR-35",
+    "title": "Trabalho em Altura",
+    "description": "Segurança no trabalho em altura",
+    "category": "Altura",
+    "hours": 16,
+    "lessons_count": 8,
+    "progress": 0.0
+  },
+  {
+    "id": "nr12",
+    "code": "NR-12",
+    "title": "Segurança em Máquinas e Equipamentos",
+    "description": "Proteção de máquinas e dispositivos de segurança",
+    "category": "Máquinas",
+    "hours": 20,
+    "lessons_count": 10,
+    "progress": 0.5
+  },
+  {
+    "id": "nr06",
+    "code": "NR-06",
+    "title": "Equipamentos de Proteção Individual",
+    "description": "Uso, seleção e manutenção de EPI",
+    "category": "Segurança",
+    "hours": 8,
+    "lessons_count": 4,
+    "progress": 0.1
+  },
+  {
+    "id": "nr17",
+    "code": "NR-17",
+    "title": "Ergonomia no Trabalho",
+    "description": "Condições de trabalho e ergonomia",
+    "category": "Ergonomia",
+    "hours": 12,
+    "lessons_count": 6,
+    "progress": 0.0
+  },
+  {
+    "id": "nr11",
+    "code": "NR-11",
+    "title": "Transporte, Movimentação, Armazenagem e Manuseio de Materiais",
+    "description": "Segurança em movimentação de cargas",
+    "category": "Cargas",
+    "hours": 10,
+    "lessons_count": 5,
+    "progress": 0.0
+  }
+]
