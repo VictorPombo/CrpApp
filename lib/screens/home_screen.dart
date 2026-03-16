@@ -111,14 +111,20 @@ class _CatalogPageState extends State<_CatalogPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'CRP Engenharia',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        Container(
+                          height: 50,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Image.asset(
+                            'assets/images/crp_logo.png',
+                            height: 42,
+                            fit: BoxFit.contain,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 8),
                         Text(
                           'Catálogo de Cursos',
                           style: Theme.of(context).textTheme.headlineMedium,

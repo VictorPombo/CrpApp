@@ -139,12 +139,26 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                         spacing: 8,
                         children: _filters.map((f) {
                           final selected = f == _selectedFilter;
+                          final isDark = Theme.of(context).brightness == Brightness.dark;
                           return ChoiceChip(
                             label: Text(f, style: const TextStyle(fontSize: 13)),
                             selected: selected,
-                            selectedColor: AppColors.primary,
+                            selectedColor: AppColors.secondary,
+                            backgroundColor: isDark ? AppColors.darkCard : null,
                             labelStyle: TextStyle(
-                              color: selected ? Colors.white : null,
+                              color: selected
+                                  ? Colors.white
+                                  : isDark
+                                      ? Colors.grey[300]
+                                      : AppColors.textBody,
+                              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                            ),
+                            side: BorderSide(
+                              color: selected
+                                  ? AppColors.secondary
+                                  : isDark
+                                      ? Colors.grey[600]!
+                                      : Colors.grey[300]!,
                             ),
                             onSelected: (_) =>
                                 setState(() => _selectedFilter = f),
