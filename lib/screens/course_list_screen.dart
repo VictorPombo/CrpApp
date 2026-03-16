@@ -74,8 +74,8 @@ class _CourseListScreenState extends State<CourseListScreen> {
                           return Container(
                             decoration: BoxDecoration(
                               color: isDarkMode
-                                  ? Colors.blue.withOpacity(0.15)
-                                  : Colors.orange.withOpacity(0.15),
+                                  ? Colors.blue.withValues(alpha: 0.15)
+                                  : Colors.orange.withValues(alpha: 0.15),
                               shape: BoxShape.circle,
                             ),
                             child: IconButton(

@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRP Cursos — Dev Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0e0f11;
+    --bg2: #161719;
+    --bg3: #1e2024;
+    --bg4: #26282d;
+    --border: #2e3035;
+    --border2: #3a3d44;
+    --text: #e8eaed;
+    --text2: #9aa0ab;
+    --text3: #5a6070;
+    --red: #ff4d4f;
+    --red-bg: #2a1215;
+    --red-border: #5c1a1a;
+    --amber: #ffa940;
+    --amber-bg: #2a1d0e;
+    --amber-border: #5c3a0e;
+    --blue: #4096ff;
+    --blue-bg: #0d1f3c;
+    --blue-border: #1a3a6e;
+    --green: #52c41a;
+    --green-bg: #0d2a0d;
+    --green-border: #1a4d1a;
+    --purple: #9254de;
+    --purple-bg: #1a0d2e;
+    --purple-border: #3d1a6e;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .logo { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+  .logo span { color: var(--amber); }
+  .version-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 2px 7px;
+    color: var(--text3);
+  }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+  .save-btn {
+    background: var(--amber);
+    color: #0e0f11;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .save-btn:hover { opacity: 0.85; }
+  .export-btn {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-family: var(--sans);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .export-btn:hover { border-color: var(--text2); color: var(--text); }
+
+  /* LAYOUT */
+  .layout { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 49px); }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .sidebar-section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 8px 16px 4px;
+    margin-top: 8px;
+  }
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 0;
+    transition: background .1s;
+    border-left: 2px solid transparent;
+    color: var(--text2);
+    font-size: 13px;
+  }
+  .sidebar-item:hover { background: var(--bg3); color: var(--text); }
+  .sidebar-item.active {
+    background: var(--bg3);
+    border-left-color: var(--amber);
+    color: var(--text);
+  }
+  .sidebar-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-red { background: var(--red); }
+  .dot-amber { background: var(--amber); }
+  .dot-blue { background: var(--blue); }
+  .dot-green { background: var(--green); }
+  .dot-purple { background: var(--purple); }
+  .sidebar-count {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    background: var(--bg4);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--text3);
+  }
+
+  /* MAIN */
+  .main { padding: 24px; overflow-y: auto; }
+
+  /* HEADER */
+  .page-header { margin-bottom: 20px; }
+  .page-header h1 { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .page-header p { font-size: 13px; color: var(--text2); }
+
+  /* PROGRESS OVERVIEW */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .overview-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .overview-card .num {
+    font-size: 28px;
+    font-weight: 700;
+    font-family: var(--mono);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .overview-card .lbl { font-size: 11px; color: var(--text3); }
+  .num-total { color: var(--text); }
+  .num-done { color: var(--green); }
+  .num-bug { color: var(--red); }
+  .num-todo { color: var(--amber); }
+  .num-pct { color: var(--blue); }
+
+  .big-progress {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+  .big-progress-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .big-progress-label { font-size: 13px; font-weight: 600; }
+  .big-progress-pct { font-family: var(--mono); font-size: 13px; color: var(--blue); }
+  .progress-track {
+    height: 6px;
+    background: var(--bg4);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--blue);
+    border-radius: 3px;
+    transition: width .5s ease;
+  }
+
+  /* FILTER BAR */
+  .filter-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .filter-chip {
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .filter-chip:hover { border-color: var(--text2); color: var(--text); }
+  .filter-chip.active { background: var(--amber); border-color: var(--amber); color: #0e0f11; font-weight: 600; }
+  .filter-chip.f-red.active { background: var(--red); border-color: var(--red); color: #fff; }
+  .filter-chip.f-green.active { background: var(--green); border-color: var(--green); color: #0e0f11; }
+  .filter-chip.f-blue.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+  .search-input {
+    margin-left: auto;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+    outline: none;
+    width: 180px;
+    transition: border-color .15s;
+  }
+  .search-input:focus { border-color: var(--blue); }
+  .search-input::placeholder { color: var(--text3); }
+
+  /* SECTION */
+  .section { margin-bottom: 20px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-header:hover { background: var(--bg3); }
+  .section-title-text { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+  .section-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-weight: 500;
+  }
+  .tag-bug { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+  .tag-todo { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+  .tag-done { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+  .tag-future { background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple-border); }
+  .section-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+  }
+  .chevron { color: var(--text3); font-size: 10px; transition: transform .2s; }
+  .chevron.open { transform: rotate(90deg); }
+
+  .section-body {
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+  }
+
+  /* TASK ITEM */
+  .task-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    transition: background .1s;
+    cursor: pointer;
+  }
+  .task-item:last-child { border-bottom: none; }
+  .task-item:hover { background: var(--bg2); }
+  .task-item.is-done { opacity: 0.45; }
+
+  .task-check {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1.5px solid var(--border2);
+    flex-shrink: 0;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .15s;
+    cursor: pointer;
+  }
+  .task-check:hover { border-color: var(--green); }
+  .task-check.checked { background: var(--green); border-color: var(--green); }
+  .task-check.bug-check { background: var(--red); border-color: var(--red); }
+  .check-svg { width: 9px; height: 9px; }
+
+  .task-body { flex: 1; min-width: 0; }
+  .task-top { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; flex-wrap: wrap; }
+  .task-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    flex-shrink: 0;
+  }
+  .task-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    flex: 1;
+  }
+  .task-item.is-done .task-title { text-decoration: line-through; color: var(--text3); }
+  .task-desc { font-size: 12px; color: var(--text2); line-height: 1.5; margin-bottom: 6px; }
+  .task-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+  .priority-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .priority-badge:hover { opacity: 0.7; }
+  .p-critical { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+  .p-high { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+  .p-medium { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-border); }
+  .p-low { background: var(--bg4); color: var(--text3); border: 1px solid var(--border); }
+
+  .file-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 6px;
+  }
+
+  .task-actions { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; flex-shrink: 0; }
+  .move-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text3);
+    font-size: 10px;
+    padding: 2px 8px;
+    cursor: pointer;
+    font-family: var(--mono);
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .move-btn:hover { border-color: var(--amber); color: var(--amber); }
+  .move-btn.primary { border-color: var(--blue); color: var(--blue); }
+  .move-btn.primary:hover { background: var(--blue-bg); }
+
+  /* PROMPT PANEL */
+  .prompt-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 24px;
+    overflow: hidden;
+  }
+  .prompt-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+  .prompt-panel-title { font-size: 13px; font-weight: 600; }
+  .copy-btn {
+    background: var(--amber);
+    color: #0e0f11;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--sans);
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .copy-btn:hover { opacity: 0.85; }
+  .prompt-body {
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text3);
+    font-size: 13px;
+  }
+
+  /* FINANCE PANEL */
+  .finance-panel { display:none; }
+  .finance-panel.visible { display:block; }
+  .finance-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px; }
+  .finance-card { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:16px; }
+  .finance-card .fc-label { font-size:11px; color:var(--text3); margin-bottom:6px; }
+  .finance-card .fc-value { font-family:var(--mono); font-size:24px; font-weight:700; line-height:1.2; }
+  .fc-free { color:#00d084; }
+  .fc-low { color:var(--blue); }
+  .fc-warn { color:var(--amber); }
+  .fc-high { color:var(--red); }
+  .finance-card .fc-sub { font-size:11px; color:var(--text3); margin-top:4px; }
+  .finance-section { background:var(--bg2); border:1px solid var(--border); border-radius:8px; margin-bottom:16px; overflow:hidden; }
+  .finance-section-header { padding:14px 16px; border-bottom:1px solid var(--border); font-size:14px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .finance-table { width:100%; border-collapse:collapse; }
+  .finance-table th { text-align:left; font-family:var(--mono); font-size:10px; color:var(--text3); text-transform:uppercase; padding:10px 16px; border-bottom:1px solid var(--border); }
+  .finance-table td { padding:10px 16px; font-size:13px; border-bottom:1px solid var(--border); }
+  .finance-table tr:last-child td { border-bottom:none; }
+  .finance-table tr:hover td { background:var(--bg3); }
+  .cost-badge { font-family:var(--mono); font-size:10px; padding:2px 8px; border-radius:4px; font-weight:600; }
+  .cost-free { background:rgba(0,208,132,.12); color:#00d084; border:1px solid rgba(0,208,132,.25); }
+  .cost-low { background:var(--blue-bg); color:var(--blue); border:1px solid var(--blue-border); }
+  .cost-paid { background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber-border); }
+  .cost-once { background:var(--purple-bg); color:var(--purple); border:1px solid var(--purple-border); }
+  .phase-bar { height:6px; background:var(--bg4); border-radius:3px; overflow:hidden; margin-top:4px; }
+  .phase-fill { height:100%; border-radius:3px; }
+  .timeline-row { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid var(--border); }
+  .timeline-row:last-child { border-bottom:none; }
+  .timeline-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .timeline-info { flex:1; }
+  .timeline-title { font-size:13px; font-weight:600; }
+  .timeline-sub { font-size:11px; color:var(--text3); }
+  .timeline-cost { font-family:var(--mono); font-size:13px; font-weight:600; text-align:right; }
+  .burn-bar { display:flex; height:24px; border-radius:6px; overflow:hidden; margin:12px 16px 16px; gap:2px; }
+  .burn-seg { display:flex; align-items:center; justify-content:center; font-size:9px; font-family:var(--mono); font-weight:600; color:#fff; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">CRP <span>Cursos</span></div>
+    <div class="version-tag">dev-dashboard v2.0</div>
+  </div>
+  <div class="topbar-right">
+    <button class="export-btn" onclick="exportPrompt()">Exportar prompt</button>
+    <button class="save-btn" onclick="saveState()">Salvar progresso</button>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-section-label">Visão geral</div>
+    <div class="sidebar-item active" onclick="setView('all', this)">
+      <div class="sidebar-dot" style="background:var(--text2)"></div>
+      Todas as tarefas
+      <span class="sidebar-count" id="sc-all">0</span>
+    </div>
+    <div class="sidebar-item" onclick="setView('next', this)">
+      <div class="sidebar-dot dot-amber"></div>
+      Próxima tarefa
+    </div>
+    <div class="sidebar-item" onclick="setView('finance', this)">
+      <div class="sidebar-dot" style="background:#00d084"></div>
+      💰 Financeiro
+    </div>
+
+    <div class="sidebar-section-label">Por status</div>
+    <div class="sidebar-item" onclick="setView('bug', this)">
+      <div class="sidebar-dot dot-red"></div>
+      Bugs críticos
+      <span class="sidebar-count" id="sc-bug">0</span>
+    </div>
+    <div class="sidebar-item" onclick="setView('todo', this)">
+      <div class="sidebar-dot dot-amber"></div>
+      A fazer
+      <span class="sidebar-count" id="sc-todo">0</span>
+    </div>
+    <div class="sidebar-item" onclick="setView('done', this)">
+      <div class="sidebar-dot dot-green"></div>
+      Concluídos
+      <span class="sidebar-count" id="sc-done">0</span>
+    </div>
+    <div class="sidebar-item" onclick="setView('future', this)">
+      <div class="sidebar-dot dot-purple"></div>
+      Fase futura
+      <span class="sidebar-count" id="sc-future">0</span>
+    </div>
+
+    <div class="sidebar-section-label">Por prioridade</div>
+    <div class="sidebar-item" onclick="setView('critical', this)">
+      <div class="sidebar-dot dot-red"></div>
+      Crítico
+      <span class="sidebar-count" id="sc-critical">0</span>
+    </div>
+    <div class="sidebar-item" onclick="setView('high', this)">
+      <div class="sidebar-dot dot-amber"></div>
+      Alta
+      <span class="sidebar-count" id="sc-high">0</span>
+    </div>
+    <div class="sidebar-item" onclick="setView('medium', this)">
+      <div class="sidebar-dot dot-blue"></div>
+      Média
+      <span class="sidebar-count" id="sc-medium">0</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="page-header">
+      <h1>Painel de desenvolvimento</h1>
+      <p>Gerencie tarefas, prioridades e gere prompts para o Antigravity implementar.</p>
+    </div>
+
+    <div class="overview-grid">
+      <div class="overview-card"><div class="num num-total" id="ov-total">0</div><div class="lbl">Total</div></div>
+      <div class="overview-card"><div class="num num-done" id="ov-done">0</div><div class="lbl">Concluídos</div></div>
+      <div class="overview-card"><div class="num num-bug" id="ov-bug">0</div><div class="lbl">Bugs</div></div>
+      <div class="overview-card"><div class="num num-todo" id="ov-todo">0</div><div class="lbl">A fazer</div></div>
+      <div class="overview-card"><div class="num num-pct" id="ov-pct">0%</div><div class="lbl">Progresso</div></div>
+    </div>
+
+    <div class="big-progress">
+      <div class="big-progress-row">
+        <span class="big-progress-label">Progresso geral do projeto</span>
+        <span class="big-progress-pct" id="pct-label">0%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-chip active" onclick="setFilter('all',this)">Todos</button>
+      <button class="filter-chip f-red" onclick="setFilter('bug',this)">Bugs</button>
+      <button class="filter-chip" onclick="setFilter('todo',this)">A fazer</button>
+      <button class="filter-chip f-green" onclick="setFilter('done',this)">Concluídos</button>
+      <button class="filter-chip f-blue" onclick="setFilter('future',this)">Fase futura</button>
+      <input class="search-input" id="search-input" placeholder="Buscar tarefa..." oninput="render()">
+    </div>
+
+    <div id="sections-container"></div>
+
+    <!-- FINANCE PANEL -->
+    <div class="finance-panel" id="finance-panel">
+      <div class="page-header">
+        <h1>💰 Visão Financeira do Projeto</h1>
+        <p>Custos de infraestrutura, investimento por fase e projeção. Estratégia: máximo de ferramentas gratuitas no MVP.</p>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="finance-grid">
+        <div class="finance-card"><div class="fc-label">Custo MVP (mensal)</div><div class="fc-value fc-free">R$ 0</div><div class="fc-sub">100% gratuito no desenvolvimento</div></div>
+        <div class="finance-card"><div class="fc-label">Custo pós-lançamento</div><div class="fc-value fc-low">~R$ 150/mês</div><div class="fc-sub">Supabase Pro + domínio</div></div>
+        <div class="finance-card"><div class="fc-label">Investimento único</div><div class="fc-value fc-warn">~R$ 820</div><div class="fc-sub">Play Store + App Store + domínio</div></div>
+        <div class="finance-card"><div class="fc-label">Break-even estimado</div><div class="fc-value" style="color:var(--purple)">15 vendas</div><div class="fc-sub">a R$ 149,90 média</div></div>
+      </div>
+
+      <!-- Custos por serviço -->
+      <div class="finance-section">
+        <div class="finance-section-header">📊 Custos por serviço — Detalhamento</div>
+        <table class="finance-table">
+          <thead><tr><th>Serviço</th><th>Plano</th><th>Custo</th><th>Fase</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Flutter SDK</td><td>Open source</td><td style="color:#00d084">Gratuito</td><td>MVP</td><td><span class="cost-badge cost-free">FREE</span></td></tr>
+            <tr><td>Supabase (Auth + DB)</td><td>Free tier (500MB, 50k MAU)</td><td style="color:#00d084">Gratuito</td><td>MVP</td><td><span class="cost-badge cost-free">FREE</span></td></tr>
+            <tr><td>Supabase Storage</td><td>Free tier (1GB)</td><td style="color:#00d084">Gratuito</td><td>MVP</td><td><span class="cost-badge cost-free">FREE</span></td></tr>
+            <tr><td>GitHub</td><td>Free (repos privados)</td><td style="color:#00d084">Gratuito</td><td>MVP</td><td><span class="cost-badge cost-free">FREE</span></td></tr>
+            <tr><td>Cloudflare DNS</td><td>Free tier</td><td style="color:#00d084">Gratuito</td><td>MVP</td><td><span class="cost-badge cost-free">FREE</span></td></tr>
+            <tr><td>Google Fonts (Inter)</td><td>Open source</td><td style="color:#00d084">Gratuito</td><td>MVP</td><td><span class="cost-badge cost-free">FREE</span></td></tr>
+            <tr style="background:var(--bg3)"><td colspan="4" style="font-weight:600;color:var(--text3)">— Pós-lançamento (quando houver alunos) —</td><td></td></tr>
+            <tr><td>Supabase</td><td>Pro (8GB, ilimitado MAU)</td><td style="color:var(--blue)">$25/mês (~R$130)</td><td>Lançamento</td><td><span class="cost-badge cost-low">MENSAL</span></td></tr>
+            <tr><td>Cloudflare Stream</td><td>Pay-as-you-go</td><td style="color:var(--blue)">~$5-30/mês</td><td>Lançamento</td><td><span class="cost-badge cost-low">POR USO</span></td></tr>
+            <tr><td>Domínio .com.br</td><td>Registro.br</td><td style="color:var(--purple)">R$40/ano</td><td>Lançamento</td><td><span class="cost-badge cost-once">ANUAL</span></td></tr>
+            <tr><td>Google Play Store</td><td>Developer Account</td><td style="color:var(--purple)">$25 (R$130) única</td><td>Publicação</td><td><span class="cost-badge cost-once">ÚNICO</span></td></tr>
+            <tr><td>Apple App Store</td><td>Developer Program</td><td style="color:var(--amber)">$99/ano (R$520)</td><td>Publicação</td><td><span class="cost-badge cost-paid">ANUAL</span></td></tr>
+            <tr><td>Mercado Pago</td><td>Taxa por transação</td><td style="color:var(--amber)">3,49% + R$0,40/venda</td><td>Receita</td><td><span class="cost-badge cost-paid">POR VENDA</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Timeline de investimento -->
+      <div class="finance-section">
+        <div class="finance-section-header">🗓️ Timeline de investimento por fase</div>
+        <div class="timeline-row"><div class="timeline-dot" style="background:#00d084"></div><div class="timeline-info"><div class="timeline-title">Fase 1 — MVP (agora → 8 semanas)</div><div class="timeline-sub">Desenvolvimento com ferramentas 100% gratuitas. Supabase free tier, Flutter open source.</div></div><div class="timeline-cost fc-free">R$ 0/mês</div></div>
+        <div class="timeline-row"><div class="timeline-dot" style="background:var(--blue)"></div><div class="timeline-info"><div class="timeline-title">Fase 2 — Lançamento (semana 9-12)</div><div class="timeline-sub">Upgrade Supabase Pro, registro de domínio, conta Google Play, vídeos Cloudflare Stream.</div></div><div class="timeline-cost fc-low">~R$ 300/mês + R$ 170 único</div></div>
+        <div class="timeline-row"><div class="timeline-dot" style="background:var(--amber)"></div><div class="timeline-info"><div class="timeline-title">Fase 3 — Publicação (semana 12-16)</div><div class="timeline-sub">Apple Developer Program ($99/ano), build de produção, submissão para as stores.</div></div><div class="timeline-cost fc-warn">+ R$ 520 (anual Apple)</div></div>
+        <div class="timeline-row"><div class="timeline-dot" style="background:var(--purple)"></div><div class="timeline-info"><div class="timeline-title">Fase 4 — SaaS corporativo (semana 20+)</div><div class="timeline-sub">Escalar infra conforme demanda. Multi-tenancy, API pública, painel admin. Custo escala com receita.</div></div><div class="timeline-cost" style="color:var(--purple)">Escala com receita</div></div>
+
+        <!-- Burn rate visual -->
+        <div style="padding:12px 16px 4px;font-size:11px;color:var(--text3)">Distribuição do investimento estimado (1º ano)</div>
+        <div class="burn-bar">
+          <div class="burn-seg" style="flex:0;background:#00d084;min-width:60px">MVP R$0</div>
+          <div class="burn-seg" style="flex:2;background:var(--blue)">Infra ~R$1.800</div>
+          <div class="burn-seg" style="flex:1;background:var(--amber)">Stores R$650</div>
+          <div class="burn-seg" style="flex:1;background:var(--purple)">Stream ~R$600</div>
+        </div>
+      </div>
+
+      <!-- Nota estratégica -->
+      <div class="finance-section">
+        <div class="finance-section-header">💡 Estratégia financeira — Sem assinaturas agora</div>
+        <div style="padding:16px;font-size:13px;color:var(--text2);line-height:1.7">
+          <strong style="color:var(--text)">Princípio:</strong> Zero custo durante o desenvolvimento. Todo investimento ocorre apenas quando o app estiver pronto para gerar receita.<br><br>
+          <strong style="color:#00d084">✓ Fase atual (R$0/mês):</strong> Supabase free tier é suficiente para desenvolvimento e testes. Mock data cobre todas as funcionalidades do MVP. GitHub free para versionamento.<br><br>
+          <strong style="color:var(--blue)">→ Primeiro gasto:</strong> Só quando o primeiro curso estiver gravado e pronto para venda. Estimativa: upgrade Supabase ($25/mês) + domínio (R$40/ano) + Google Play ($25 única).<br><br>
+          <strong style="color:var(--amber)">→ Apple Store:</strong> Pode ser adiada. Lançar primeiro apenas no Android + Web, validar o produto, e investir na Apple App Store quando houver receita confirmada.<br><br>
+          <strong style="color:var(--text)">Break-even:</strong> Com preço médio de R$149,90 por curso e custo mensal ~R$150, <strong style="color:#00d084">basta 1 venda por mês para cobrir a infraestrutura</strong>. Com 15 vendas totais, o investimento único é recuperado.
+        </div>
+      </div>
+    </div>
+
+    <div class="prompt-panel" id="prompt-panel" style="display:none">
+      <div class="prompt-panel-header">
+        <span class="prompt-panel-title" id="prompt-title">Prompt gerado</span>
+        <button class="copy-btn" onclick="copyPrompt()">Copiar prompt</button>
+      </div>
+      <div class="prompt-body" id="prompt-body"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TASKS = [
+  {
+    section: "Bugs e correções urgentes",
+    type: "bug",
+    items: [
+    ]
+  },
+  {
+    section: "Autenticação e segurança",
+    type: "todo",
+    items: [
+      { id:4, status:"todo", priority:"critical", title:"Refatorar auth com Supabase Auth (free tier)",
+        desc:"Substituir o AuthService mock por Supabase Auth real. Free tier: 50k MAU, suficiente para MVP. SEM custo.",
+        files:["services/auth_service.dart","main.dart"],
+        prompt:`Configure Supabase Auth (free tier, sem custos).\n\n1. flutter pub add supabase_flutter\n2. Criar lib/core/supabase_config.dart com URL e anon key\n3. Refatorar AuthService para usar Supabase Auth\n4. Login com e-mail/senha\n5. Cadastro com nome + e-mail + senha\n6. Recuperação de senha (e-mail)\n7. Persistir sessão automaticamente\n8. Guard de rotas: área do aluno requer login` },
+      { id:5, status:"todo", priority:"high", title:"Guards de rota (proteger área do aluno)",
+        desc:"Área do aluno só acessível com login. Redirecionar para login se não autenticado. GoRouter redirect.",
+        files:["main.dart"],
+        prompt:`Implemente guards de rota no GoRouter.\n\n1. Adicionar redirect no GoRouter verificando AuthService\n2. Proteger: /course/:id (pós-compra), /lesson/:id, /certificate/:id\n3. Rotas públicas: /home, /course/:id (detalhes), /login, /register\n4. Após login: redirecionar para rota de origem` },
+    ]
+  },
+  {
+    section: "Telas do aluno — pendentes",
+    type: "todo",
+    items: [
+      { id:6, status:"todo", priority:"high", title:"Avaliação / prova do curso",
+        desc:"Questionário de múltipla escolha ao final do curso. Necessário para emissão do certificado.",
+        files:["screens/quiz_screen.dart"],
+        prompt:`Crie lib/screens/student/quiz_screen.dart.\n\n- Lista de perguntas com 4 alternativas cada\n- Indicador de progresso (Pergunta X de Y)\n- Destaque na alternativa selecionada\n- Botão "Próxima" / "Finalizar"\n- Tela de resultado: nota, passou/reprovou (mín. 70%)\n- Se passou: liberar certificado\n- Se reprovou: botão "Tentar novamente"\n- Mock com 5 perguntas sobre NR-35` },
+      { id:7, status:"todo", priority:"medium", title:"Histórico de compras na tela de perfil",
+        desc:"Tela com lista de cursos comprados, data, valor, status do pagamento.",
+        files:["screens/student/payments_screen.dart"],
+        prompt:`Crie payments_screen.dart.\n- Lista de compras: nome do curso, data, valor, status (pago/pendente/reembolsado)\n- Botão "Ver recibo" abre dialog com detalhes da transação\n- Dados mock` },
+      { id:8, status:"todo", priority:"medium", title:"Splash screen com verificação de auth",
+        desc:"Logo CRP por 2s, depois verificar se logado → Meus Cursos, senão → Home.",
+        files:["screens/splash_screen.dart"],
+        prompt:`Criar/refatorar splash_screen.dart.\n- Logo CRP centralizado em fundo escuro\n- Animação de fade in\n- Após 2s: verificar auth\n- Logado → /home (aba Meus Cursos)\n- Não logado → /home (aba Catálogo)\n- Definir como rota inicial no GoRouter` },
+    ]
+  },
+  {
+    section: "Qualidade e polish",
+    type: "todo",
+    items: [
+      { id:9, status:"todo", priority:"medium", title:"Shimmer loading em todas as listas",
+        desc:"Skeleton/shimmer nas listas enquanto carregam dados. Evitar tela em branco.",
+        files:["widgets/shimmer_card.dart"],
+        prompt:`Adicione shimmer loading.\n1. flutter pub add shimmer\n2. Criar widgets/shimmer_card.dart\n3. Usar em: catálogo, meus cursos, tela do curso` },
+      { id:10, status:"todo", priority:"medium", title:"Estados de erro e vazio reutilizáveis",
+        desc:"Widget de erro com retry. Estado vazio para aluno sem cursos ou certificados.",
+        files:["widgets/error_state.dart","widgets/empty_state.dart"],
+        prompt:`Crie widgets reutilizáveis de estado.\n1. error_state.dart: ícone + mensagem + botão "Tentar novamente"\n2. empty_state.dart: ícone + mensagem contextual ("Nenhum curso encontrado")\nUsar em: Meus Cursos vazio, Certificados vazio, erro de rede` },
+      { id:11, status:"todo", priority:"low", title:"Chips de categoria no catálogo",
+        desc:"Filtro por categoria com chips horizontais: Todos, Eletricidade, Altura, etc.",
+        files:["screens/home_screen.dart"],
+        prompt:`Adicione chips de filtro de categoria no catálogo.\n- Row horizontal de ChoiceChips: Todos | Eletricidade | Altura | Máquinas | Incêndio | Segurança\n- Filtrar lista de cursos ao selecionar categoria\n- Combinar com busca por texto` },
+    ]
+  },
+  {
+    section: "Backend e produção",
+    type: "future",
+    items: [
+      { id:12, status:"future", priority:"high", title:"Banco de dados Supabase (tabelas reais)",
+        desc:"Criar tabelas no PostgreSQL do Supabase: courses, modules, lessons, enrollments, certificates. Row Level Security.",
+        files:["services/supabase_client.dart"],
+        prompt:`Crie as tabelas no Supabase PostgreSQL.\n\nSQL migrations para:\n- users (id, name, email, role, avatar_url)\n- courses (id, code, title, description, category, hours, price, instructor_name, instructor_crea, published)\n- modules (id, course_id, title, sort_order)\n- lessons (id, module_id, title, description, video_url, duration_seconds, sort_order)\n- lesson_materials (id, lesson_id, title, file_url, file_type, file_size_bytes)\n- enrollments (id, user_id, course_id, status, progress_pct, started_at, completed_at)\n- lesson_progress (id, enrollment_id, lesson_id, completed, completed_at)\n- payments (id, user_id, course_id, amount, method, status, external_id)\n- certificates (id, user_id, course_id, certificate_code, pdf_url, issued_at, valid_until)\n\nConfigurar RLS para cada tabela.` },
+      { id:13, status:"future", priority:"high", title:"Integração Mercado Pago (pagamento real)",
+        desc:"Checkout transparente com Pix + Cartão. Webhook para confirmar e liberar curso.",
+        files:["services/payment_service.dart"],
+        prompt:`Integre Mercado Pago.\n1. API REST do Mercado Pago (não precisa SDK Flutter)\n2. Edge Function no Supabase para criar preferência de pagamento\n3. Gerar QR code Pix dinâmico\n4. Processar cartão via checkout transparente\n5. Webhook para receber confirmação → liberar acesso ao curso` },
+      { id:14, status:"future", priority:"high", title:"Cloudflare Stream (vídeos reais)",
+        desc:"Upload de vídeos dos cursos. Integrar player Flutter com URLs do Cloudflare Stream.",
+        files:["services/video_service.dart"],
+        prompt:`Integre Cloudflare Stream.\n1. Criar conta Cloudflare Stream\n2. Upload dos vídeos dos cursos\n3. Criar video_service.dart com getVideoUrl(lessonId)\n4. Integrar chewie player com URL do Cloudflare\n5. Substituir placeholder por player real` },
+      { id:15, status:"future", priority:"medium", title:"Geração de certificado PDF real",
+        desc:"PDF com layout profissional, QR code de validação, armazenado no Supabase Storage.",
+        files:["services/certificate_service.dart"],
+        prompt:`Gere certificados PDF reais.\n1. Package pdf + printing no Flutter\n2. Layout: logo CRP, dados aluno, curso, datas, QR code\n3. QR aponta para URL de validação pública\n4. Salvar PDF no Supabase Storage\n5. Enviar link por e-mail` },
+      { id:16, status:"future", priority:"medium", title:"Build e publicação nas stores",
+        desc:"Google Play Store + Apple App Store. Ícones, splash nativo, permissões, builds de release.",
+        files:["android/app/build.gradle","ios/Runner/Info.plist"],
+        prompt:`Configure builds de produção.\n\nAndroid:\n1. Gerar keystore de produção\n2. Configurar build.gradle\n3. flutter build appbundle --release\n4. Upload Google Play Console\n\niOS:\n1. Bundle ID e certificados Xcode\n2. flutter build ipa --release\n3. Upload via Transporter` },
+      { id:17, status:"future", priority:"low", title:"Painel administrativo web",
+        desc:"CRUD de cursos, módulos, aulas. Upload de vídeos. Gestão de alunos e certificados.",
+        files:["admin/"],
+        prompt:`Crie o painel administrativo (Flutter Web ou Next.js).\n- CRUD de cursos, módulos, aulas\n- Upload de vídeos para Cloudflare Stream\n- Upload de materiais para Supabase Storage\n- Gestão de alunos (listar, bloquear)\n- Gestão de certificados (emitir, revogar)\n- Dashboard com métricas (vendas, alunos, conclusões)` },
+    ]
+  },
+  {
+    section: "Concluído ✅",
+    type: "done",
+    items: [
+      { id:18, status:"done", priority:"done", title:"Design system completo (AppTheme)",
+        desc:"Cores da marca, temas dark/light, tipografia Inter, tokens de UI. Arquivo: core/theme/app_theme.dart", files:[], prompt:"" },
+      { id:19, status:"done", priority:"done", title:"Models de dados (Course, Module, Lesson, Enrollment, Certificate)",
+        desc:"Todos os models com fromJson, campos formatados, status computed. 5 arquivos em lib/models/.", files:[], prompt:"" },
+      { id:20, status:"done", priority:"done", title:"Mock data expandido (7 cursos NR)",
+        desc:"NR-10, NR-35, NR-12, NR-23, NR-06, NR-17, NR-18 com módulos, aulas, instrutores e preços reais.", files:[], prompt:"" },
+      { id:21, status:"done", priority:"done", title:"Catálogo de cursos (Home)",
+        desc:"Header CRP Engenharia, destaques horizontal, lista vertical, busca, toggle tema. CourseCard premium com gradiente.", files:[], prompt:"" },
+      { id:22, status:"done", priority:"done", title:"Tela de detalhe do curso",
+        desc:"Header gradiente com badge NR, rating, stats (carga/módulos/aulas/certificado), objetivos, conteúdo programático expandível, instrutor, barra de compra fixa.", files:[], prompt:"" },
+      { id:23, status:"done", priority:"done", title:"Tela Meus Cursos",
+        desc:"Stats row (cursos/concluídos/certificados), filtros (Todos/Em andamento/Concluídos/Não iniciados), cards com ícone gradiente, badge de status, progresso, CTAs contextuais.", files:[], prompt:"" },
+      { id:24, status:"done", priority:"done", title:"Player de aula (LessonPlayerScreen)",
+        desc:"Placeholder de vídeo, controles (-10s/play/+10s/velocidade), 3 tabs (Sobre/Materiais/Anotações), materiais com tipo e download, botão marcar concluída.", files:[], prompt:"" },
+      { id:25, status:"done", priority:"done", title:"Tela de certificado com QR code",
+        desc:"Card visual com borda dourada, nome aluno/curso/datas, QR code verificável (qr_flutter), status de validade, botões Baixar/Compartilhar/LinkedIn.", files:[], prompt:"" },
+      { id:26, status:"done", priority:"done", title:"Perfil do usuário — estrutura visual",
+        desc:"Avatar gradiente, dados do aluno, menu em seções (dados/config/sobre), switch de tema integrado, botão logout.", files:[], prompt:"" },
+      { id:27, status:"done", priority:"done", title:"Tema claro/escuro com persistência",
+        desc:"ThemeService com SharedPreferences, dark como padrão, toggle em todas as telas.", files:[], prompt:"" },
+      { id:28, status:"done", priority:"done", title:"Bottom navigation bar (3 abas)",
+        desc:"Catálogo, Meus Cursos, Perfil — navegação com BottomNavigationBar.", files:[], prompt:"" },
+      { id:29, status:"done", priority:"done", title:"Rotas dinâmicas (GoRouter)",
+        desc:"/home, /course/:courseId, /lesson/:lessonId, /certificate/:courseId, /login, /register.", files:[], prompt:"" },
+      { id:30, status:"done", priority:"done", title:"Correção de erros de compilação",
+        desc:"Brackets desalinhados, withOpacity deprecated → withValues, async BuildContext gaps, imports não utilizados.", files:[], prompt:"" },
+      { id:31, status:"done", priority:"done", title:"PRD completo do produto",
+        desc:"Product Requirements Document com arquitetura, modelo de dados ERD, mapa de telas, UX/UI, modelo de negócio, roadmap e custos.", files:[], prompt:"" },
+      { id:32, status:"done", priority:"done", title:"Navegação completa do Perfil (Bug #1)",
+        desc:"5 telas criadas: Dados pessoais, Histórico de cursos, Certificados, Pagamentos, Alterar senha. 3 dialogs: Sobre, Suporte, Termos.", files:[], prompt:"" },
+      { id:33, status:"done", priority:"done", title:"Fluxo de compra completo (Bug #2)",
+        desc:"5 telas: Carrinho (cupom+resumo), Pagamento (Cartão/Pix/Boleto), Processamento (animação 4 etapas), Sucesso, Falha. Botão conectado no course_detail_screen.", files:[], prompt:"" },
+      { id:34, status:"done", priority:"done", title:"Navegação módulos/aulas → player (Bug #3)",
+        desc:"Cada aula no ExpansionTile navega para LessonPlayerScreen com dados reais (título, descrição, materiais, índice). Player refatorado com toggle play/pause e duração visível.", files:[], prompt:"" },
+      { id:35, status:"done", priority:"done", title:"CertificateEligibilityService + Widget (Tarefa 1)",
+        desc:"Serviço central com regra legal NR (75% presença + 70% quiz + CPF/empresa). Widget reutilizável com 2 estados: elegível (verde) e bloqueado (âmbar com barra 0-3, checklist, botões de ação).", files:[], prompt:"" },
+      { id:36, status:"done", priority:"done", title:"QuizScreen + Banco de questões NR (Tarefa 2)",
+        desc:"35 questões reais (NR-35=10, NR-10=5, NR-12=5, NR-23=5, NR-06=5, genérico=5) com explicações técnicas. Tela com fluxo completo: pergunta→confirmar→explicação→resultado com CertificateEligibilityCard.", files:[], prompt:"" },
+      { id:37, status:"done", priority:"done", title:"Auth + Guards de rota (Tarefa 3)",
+        desc:"AuthService expandido (cpf/email/company/role, updateProfile). GoRouter redirect guard para rotas protegidas (/lesson, /certificate, /quiz). Login e Register redesenhados com UI premium, redirect após login.", files:[], prompt:"" },
+      { id:38, status:"done", priority:"done", title:"CertificateScreen com validação real (Tarefa 4)",
+        desc:"Certificado só exibe se 3 condições atendidas. Dados do aluno via AuthService (nome, CPF, empresa). Nota, CNPJ CRP, URL validação, QR code dinâmico. Se bloqueado: CertificateEligibilityCard.", files:[], prompt:"" },
+      { id:39, status:"done", priority:"done", title:"Splash screen animada (Tarefa 5)",
+        desc:"Gradiente escuro, logo CRP com fade+scale (easeOutBack), subtítulo com delay, loading sutil. Rota inicial /splash → /home após 2.2s.", files:[], prompt:"" },
+      { id:40, status:"done", priority:"done", title:"Shimmer + estados vazios + filtro categorias (Tarefa 6)",
+        desc:"Shimmer nativo (sem dependências), EmptyState, ErrorState como widgets reutilizáveis. Filtro de categorias com ChoiceChips no catálogo. Loading shimmer no carregamento.", files:[], prompt:"" },
+      { id:41, status:"done", priority:"done", title:"3 estados visuais de aulas (concluída/atual/não iniciada)",
+        desc:"Check verde + strikethrough para concluída, play azul com borda esquerda + badge 'Assistir agora' para atual, play cinza para não iniciada. Progresso por módulo (X/Y · Z%) no cabeçalho.", files:[], prompt:"" },
+      { id:42, status:"done", priority:"done", title:"Mock data completo — 35 NRs do MTE",
+        desc:"courses.json expandido de 7 para 35 cursos (todas as NRs ativas). 108 módulos, 648 aulas. 22 categorias, instrutores distintos por área, cores de thumbnail únicas.", files:[], prompt:"" },
+      { id:43, status:"done", priority:"done", title:"Grid responsivo no catálogo",
+        desc:"Seção 'Todos os cursos' trocou de ListView para GridView responsivo (1-4 colunas por largura). Altura fixa 270px (mainAxisExtent). Contador de cursos. Mesmo CourseCard dos destaques.", files:[], prompt:"" },
+      { id:44, status:"done", priority:"done", title:"Responsividade completa (mobile/tablet/desktop)",
+        desc:"Criados responsive.dart e app_spacing.dart. Constraints Center+ConstrainedBox (maxWidth 1140px desktop, 760px tablet) aplicadas em CourseDetail, MyCourses, Profile e LessonScreen. Player com AspectRatio(16/9). Zero overflows.", files:[], prompt:"" },
+      { id:45, status:"done", priority:"done", title:"AUDITORIA: LocalStorageService (infraestrutura)",
+        desc:"Serviço centralizado de persistência local via SharedPreferences. CRUD de enrollments, certificates, annotations e payments. Registrado no main.dart.", files:["lib/services/local_storage_service.dart"], prompt:"" },
+      { id:46, status:"done", priority:"done", title:"AUDITORIA: BUG1 — Overflow abas LessonPlayer",
+        desc:"Todas as 3 abas (Sobre, Materiais, Anotações) envolvidas em SingleChildScrollView com padding-bottom 80px. Elimina overflow do botão 'Marcar concluída'.", files:["lib/screens/lesson_screen.dart"], prompt:"" },
+      { id:47, status:"done", priority:"done", title:"AUDITORIA: BUG2 — Anotações persistentes com debounce",
+        desc:"TextEditingController nomeado + SharedPreferences via LocalStorageService. Chave annotation_${lessonId}. Salva com debounce 500ms ao digitar. Carrega ao abrir aba.", files:["lib/screens/lesson_screen.dart"], prompt:"" },
+      { id:48, status:"done", priority:"done", title:"AUDITORIA: BUG3 — Enrollment pós-compra",
+        desc:"PaymentSuccessScreen (agora StatefulWidget) cria enrollment + registra pagamento no initState via LocalStorageService. Fluxo PaymentScreen→ProcessingScreen propaga totalPaid e paymentMethod.", files:["lib/screens/purchase/payment_success_screen.dart","lib/screens/purchase/processing_screen.dart","lib/screens/purchase/payment_screen.dart"], prompt:"" },
+      { id:49, status:"done", priority:"done", title:"AUDITORIA: BUG4 — Certificados integrados com dados reais",
+        desc:"CertificatesListScreen usa LocalStorageService.getCertificates() com código, data e validade reais. Não depende mais de progress estático do mock.", files:["lib/screens/student/certificates_list_screen.dart"], prompt:"" },
+      { id:50, status:"done", priority:"done", title:"AUDITORIA: BUG5 — Velocidade do player cicla",
+        desc:"Botão de velocidade é GestureDetector que cicla entre 0.5x, 1.0x, 1.5x, 2.0x ao tocar. Estado _speedIndex.", files:["lib/screens/lesson_screen.dart"], prompt:"" },
+      { id:51, status:"done", priority:"done", title:"AUDITORIA: BUG6 — Seek bar clicável com Slider",
+        desc:"LinearProgressIndicator estático substituído por SliderTheme+Slider. Usuário pode arrastar para seek. Botões -10s/+10s movem ±5% do Slider.", files:["lib/screens/lesson_screen.dart"], prompt:"" },
+      { id:52, status:"done", priority:"done", title:"AUDITORIA: BUG7 — Conclusão de aula persiste",
+        desc:"Botão 'Marcar concluída' chama LocalStorageService.markLessonComplete() que atualiza enrollment real com progresso calculado.", files:["lib/screens/lesson_screen.dart"], prompt:"" },
+      { id:53, status:"done", priority:"done", title:"AUDITORIA: BUG8 — Última aula oferece quiz",
+        desc:"Ao concluir última aula (currentIndex >= totalLessons), AlertDialog 'Parabéns!' oferece navegação para QuizScreen.", files:["lib/screens/lesson_screen.dart"], prompt:"" },
+      { id:54, status:"done", priority:"done", title:"AUDITORIA: BUG9 — PersonalData salva no AuthService",
+        desc:"Campos carregam do AuthService.currentUser no initState. Botão 'Salvar' chama AuthService.updateProfile(cpf, company). Dados persistem em SharedPreferences.", files:["lib/screens/student/personal_data_screen.dart"], prompt:"" },
+      { id:55, status:"done", priority:"done", title:"AUDITORIA: BUG13 — CourseDetail 'Continuar' se matriculado",
+        desc:"BottomBar verifica LocalStorageService.isEnrolled(). Se matriculado: 'Continuar curso' (verde) navega para próxima aula não concluída. Se não: 'Comprar curso' (azul) com preço.", files:["lib/screens/course_detail_screen.dart"], prompt:"" },
+      { id:56, status:"done", priority:"done", title:"AUDITORIA: BUG15 — Logout completo",
+        desc:"Botão 'Sair' chama AuthService.logout() + LocalStorageService.clearAll() e navega para /home.", files:["lib/screens/profile_screen.dart"], prompt:"" },
+      { id:57, status:"done", priority:"done", title:"AUDITORIA: MyCoursesScreen com dados reais",
+        desc:"Filtra apenas cursos com enrollment real via LocalStorageService.getEnrollments(). Progresso de cada card vem de getProgress(courseId). Adicionado copyWithProgress ao Course model.", files:["lib/screens/my_courses_screen.dart","lib/models/course_model.dart"], prompt:"" },
+      { id:58, status:"done", priority:"done", title:"FIX: Player altura + Materiais/Anotações layout",
+        desc:"Player limitado a max 300px (ConstrainedBox). Anotações usam expands:true preenchendo todo o espaço disponível da aba.", files:["lib/screens/lesson_screen.dart"], prompt:"" },
+      { id:59, status:"done", priority:"done", title:"FEATURE: Botão Tela Cheia no player",
+        desc:"Botão fullscreen no canto inferior direito do player. Overlay em tela cheia com play/pause, seek bar, velocidade e duração. Double-tap para entrar/sair.", files:["lib/screens/lesson_screen.dart"], prompt:"" },
+      { id:60, status:"done", priority:"done", title:"FEATURE: Redesign controles fullscreen + Anotações lateral",
+        desc:"Controles (sair, -10s, +10s, velocidade, duração) no canto inferior esquerdo. Ícone de caderno no inferior direito abre painel de anotações lateral (30% da tela) com TextField persistente.", files:["lib/screens/lesson_screen.dart"], prompt:"" },
+      { id:61, status:"done", priority:"done", title:"FEATURE: Timer real do vídeo com velocidade",
+        desc:"Timer roda em tempo real quando despausado (100ms tick). Formato MM:SS / MM:SS. Respeita velocidade (0.5x→2x). Auto-para ao final. Seek bar sincronizada.", files:["lib/screens/lesson_screen.dart"], prompt:"" },
+      { id:62, status:"done", priority:"done", title:"FIX: Timer fullscreen não atualizava",
+        desc:"Timer chamava setState() que não atualizava o StatefulBuilder do dialog fullscreen. Adicionado _onTimerTick callback registrado pelo fullscreen para sincronizar ambas UIs.", files:["lib/screens/lesson_screen.dart"], prompt:"" },
+      { id:63, status:"done", priority:"done", title:"FIX: CourseDetail usava mock hardcoded de aulas concluídas",
+        desc:"Removido mock que marcava 2 primeiras aulas como 'Concluída'. Agora lê dados reais de LocalStorageService.getCompletedLessons().", files:["lib/screens/course_detail_screen.dart"], prompt:"" },
+      { id:64, status:"done", priority:"done", title:"FIX: LessonPlayerScreen não recebia courseId",
+        desc:"Navigator.push em course_detail_screen não passava courseId ao LessonPlayerScreen. Sem courseId, markLessonComplete nunca era chamado. Corrigido passando course.id.", files:["lib/screens/course_detail_screen.dart"], prompt:"" },
+      { id:65, status:"done", priority:"done", title:"FIX: markLessonComplete auto-cria enrollment",
+        desc:"Antes retornava 0.0 se não tinha enrollment. Agora cria enrollment automaticamente ao marcar primeira aula como concluída, com totalLessons correto.", files:["lib/services/local_storage_service.dart"], prompt:"" },
+      { id:66, status:"done", priority:"done", title:"FIX: CourseDetail recarrega ao voltar do player",
+        desc:"Navigator.push.then() agora recarrega _completedLessonIds do LocalStorageService ao voltar. Conteúdo programático reflete aulas concluídas em tempo real.", files:["lib/screens/course_detail_screen.dart"], prompt:"" },
+    ]
+  }
+];
+
+// State
+let states = {};
+let currentView = 'all';
+let currentFilter = 'all';
+
+function initStates() {
+  const saved = localStorage.getItem('crp_task_states');
+  if (saved) {
+    states = JSON.parse(saved);
+  } else {
+    TASKS.forEach(s => s.items.forEach(item => {
+      states[item.id] = item.status;
+    }));
+  }
+}
+
+function saveState() {
+  localStorage.setItem('crp_task_states', JSON.stringify(states));
+  const btn = document.querySelector('.save-btn');
+  btn.textContent = 'Salvo!';
+  setTimeout(() => btn.textContent = 'Salvar progresso', 1500);
+}
+
+function toggleDone(id, e) {
+  e.stopPropagation();
+  const orig = TASKS.flatMap(s=>s.items).find(i=>i.id===id);
+  if (!orig) return;
+  if (states[id] === 'done') {
+    states[id] = orig.status === 'done' ? 'done' : orig.status;
+  } else {
+    states[id] = 'done';
+  }
+  saveState();
+  render();
+}
+
+function changePriority(id, e) {
+  e.stopPropagation();
+  const order = ['critical','high','medium','low'];
+  const item = TASKS.flatMap(s=>s.items).find(i=>i.id===id);
+  if (!item) return;
+  const cur = item.priority;
+  const idx = order.indexOf(cur);
+  item.priority = order[(idx+1) % order.length];
+  render();
+}
+
+function generatePrompt(id) {
+  const item = TASKS.flatMap(s=>s.items).find(i=>i.id===id);
+  if (!item || !item.prompt) return;
+  const panel = document.getElementById('prompt-panel');
+  document.getElementById('prompt-title').textContent = `Prompt — Tarefa ${id}: ${item.title}`;
+  document.getElementById('prompt-body').textContent = item.prompt;
+  panel.style.display = 'block';
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function copyPrompt() {
+  const text = document.getElementById('prompt-body').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copiado!';
+    setTimeout(() => btn.textContent = 'Copiar prompt', 1500);
+  });
+}
+
+function exportPrompt() {
+  const pending = TASKS.flatMap(s=>s.items)
+    .filter(i => states[i.id] !== 'done' && i.prompt)
+    .sort((a,b) => {
+      const pOrder = {critical:0,high:1,medium:2,low:3,done:99,future:99};
+      return (pOrder[a.priority]||99) - (pOrder[b.priority]||99);
+    });
+
+  let out = `# CRP Cursos — Backlog de desenvolvimento\nGerado em ${new Date().toLocaleDateString('pt-BR')}\n\n`;
+  out += `## Tarefas pendentes (${pending.length})\n\n`;
+  pending.forEach((item, i) => {
+    out += `---\n### TAREFA ${i+1}: ${item.title}\nPrioridade: ${item.priority}\n\n${item.prompt}\n\n`;
+  });
+
+  const blob = new Blob([out], {type:'text/markdown'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'crp_backlog_prompt.md';
+  a.click();
+}
+
+function setView(view, el) {
+  currentView = view;
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+
+  const finPanel = document.getElementById('finance-panel');
+  const taskEls = document.querySelectorAll('.overview-grid, .big-progress, .filter-bar, #sections-container, .prompt-panel');
+
+  if (view === 'finance') {
+    finPanel.classList.add('visible');
+    taskEls.forEach(e => e.style.display = 'none');
+  } else {
+    finPanel.classList.remove('visible');
+    taskEls.forEach(e => e.style.display = '');
+    render();
+  }
+}
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function getEffectiveFilter() {
+  if (currentView === 'next') return 'next';
+  if (currentView !== 'all') return currentView;
+  return currentFilter;
+}
+
+function render() {
+  const container = document.getElementById('sections-container');
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const f = getEffectiveFilter();
+
+  let totalAll=0, totalDone=0, totalBug=0, totalTodo=0, totalFuture=0,
+      totalCritical=0, totalHigh=0, totalMedium=0;
+
+  TASKS.forEach(s => s.items.forEach(item => {
+    const st = states[item.id];
+    totalAll++;
+    if (st==='done') totalDone++;
+    else if (st==='bug') totalBug++;
+    else if (st==='future') totalFuture++;
+    else totalTodo++;
+    if (item.priority==='critical' && st!=='done') totalCritical++;
+    if (item.priority==='high' && st!=='done') totalHigh++;
+    if (item.priority==='medium' && st!=='done') totalMedium++;
+  }));
+
+  const nonFuture = TASKS.flatMap(s=>s.items).filter(i=>states[i.id]!=='future').length;
+  const pct = Math.round((totalDone / Math.max(nonFuture,1))*100);
+
+  document.getElementById('ov-total').textContent = totalAll;
+  document.getElementById('ov-done').textContent = totalDone;
+  document.getElementById('ov-bug').textContent = totalBug;
+  document.getElementById('ov-todo').textContent = totalTodo;
+  document.getElementById('ov-pct').textContent = pct+'%';
+  document.getElementById('pct-label').textContent = pct+'%';
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('sc-all').textContent = totalAll;
+  document.getElementById('sc-bug').textContent = totalBug;
+  document.getElementById('sc-todo').textContent = totalTodo;
+  document.getElementById('sc-done').textContent = totalDone;
+  document.getElementById('sc-future').textContent = totalFuture;
+  document.getElementById('sc-critical').textContent = totalCritical;
+  document.getElementById('sc-high').textContent = totalHigh;
+  document.getElementById('sc-medium').textContent = totalMedium;
+
+  container.innerHTML = '';
+
+  if (f === 'next') {
+    const next = TASKS.flatMap(s=>s.items)
+      .filter(i => states[i.id]!=='done' && states[i.id]!=='future')
+      .sort((a,b) => {
+        const o = {critical:0,high:1,medium:2,low:3};
+        return (o[a.priority]||9)-(o[b.priority]||9);
+      })[0];
+    if (next) {
+      renderSection({section:'Próxima tarefa recomendada',type:'todo',items:[next]}, search);
+    }
+    return;
+  }
+
+  TASKS.forEach(section => {
+    const filtered = section.items.filter(item => {
+      const st = states[item.id];
+      if (search && !item.title.toLowerCase().includes(search) && !item.desc.toLowerCase().includes(search)) return false;
+      if (f==='all') return true;
+      if (f==='bug') return st==='bug';
+      if (f==='todo') return st==='todo';
+      if (f==='done') return st==='done';
+      if (f==='future') return st==='future';
+      if (f==='critical') return item.priority==='critical' && st!=='done';
+      if (f==='high') return item.priority==='high' && st!=='done';
+      if (f==='medium') return item.priority==='medium' && st!=='done';
+      return true;
+    });
+    if (!filtered.length) return;
+    renderSection({...section, items:filtered}, search);
+  });
+
+  if (!container.innerHTML) {
+    container.innerHTML = '<div class="empty-state">Nenhuma tarefa encontrada.</div>';
+  }
+}
+
+function renderSection(section, search) {
+  const container = document.getElementById('sections-container');
+  const tagMap = {bug:'tag-bug',todo:'tag-todo',done:'tag-done',future:'tag-future'};
+  const tagLabel = {bug:'Bug',todo:'A fazer',done:'Concluído',future:'Fase futura'};
+  const prioMap = {critical:'p-critical',high:'p-high',medium:'p-medium',low:'p-low',done:'p-low'};
+  const prioLabel = {critical:'Crítico',high:'Alta',medium:'Média',low:'Baixa',done:'Feito'};
+
+  let html = `<div class="section">
+    <div class="section-header" onclick="toggleSection('sec-${section.section.replace(/\s/g,'_')}')">
+      <span class="section-tag ${tagMap[section.type]||'tag-todo'}">${tagLabel[section.type]||'A fazer'}</span>
+      <span class="section-title-text">${section.section}</span>
+      <span class="section-count">${section.items.length} itens</span>
+      <span class="chevron open" id="chev-sec-${section.section.replace(/\s/g,'_')}">▶</span>
+    </div>
+    <div class="section-body" id="sec-${section.section.replace(/\s/g,'_')}">`;
+
+  section.items.forEach(item => {
+    const st = states[item.id];
+    const isDone = st==='done';
+    const isBug = st==='bug';
+    html += `<div class="task-item ${isDone?'is-done':''}">
+      <div class="task-check ${isDone?'checked':isBug?'bug-check':''}" onclick="toggleDone(${item.id},event)">
+        ${isDone||isBug?`<svg class="check-svg" viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5l2 2L7.5 2" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>`:''}
+      </div>
+      <div class="task-body">
+        <div class="task-top">
+          <span class="task-num">#${item.id}</span>
+          <span class="task-title">${item.title}</span>
+        </div>
+        <div class="task-desc">${item.desc}</div>
+        <div class="task-meta">
+          <span class="priority-badge ${prioMap[item.priority]||'p-low'}" onclick="changePriority(${item.id},event)" title="Clique para mudar prioridade">${prioLabel[item.priority]||'Baixa'}</span>
+          ${item.files.slice(0,2).map(f=>`<span class="file-tag">${f.split('/').pop()}</span>`).join('')}
+        </div>
+      </div>
+      ${item.prompt ? `<div class="task-actions">
+        <button class="move-btn primary" onclick="generatePrompt(${item.id})">Gerar prompt ↗</button>
+        ${!isDone?`<button class="move-btn" onclick="toggleDone(${item.id},event)">Marcar feito</button>`:''}
+      </div>` : ''}
+    </div>`;
+  });
+
+  html += `</div></div>`;
+  document.getElementById('sections-container').innerHTML += html;
+}
+
+function toggleSection(id) {
+  const body = document.getElementById(id);
+  const chev = document.getElementById('chev-'+id);
+  if (!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (chev) chev.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+}
+
+initStates();
+render();
+</script>
+</body>
+</html>

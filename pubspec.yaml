@@ -41,6 +41,7 @@ dependencies:
   pdf: any
   qr_flutter: any
   shared_preferences: any
+  google_fonts: any
 
 dev_dependencies:
   flutter_test:
