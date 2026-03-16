@@ -33,9 +33,12 @@ class CrpApp extends StatefulWidget {
 
 class _CrpAppState extends State<CrpApp> {
   late final GoRouter _router;
+  bool _hasShownSplash = false;
 
   // Rotas que exigem autenticação
   static const _protectedPrefixes = ['/lesson', '/certificate', '/quiz'];
+  // Rotas públicas que devem funcionar como deep link (sem splash)
+  static const _publicDeepLinkPrefixes = ['/validar'];
 
   @override
   void initState() {
@@ -110,10 +113,28 @@ class _CrpAppState extends State<CrpApp> {
     );
   }
 
-  /// Guard de rota: redireciona para login se não autenticado
+  /// Guard de rota: redireciona para login se não autenticado.
+  /// Também lida com deep links públicos (ex: /validar/...).
   String? _guardRedirect(BuildContext context, GoRouterState state) {
     final isLoggedIn = AuthService.isAuthenticated;
     final currentPath = state.uri.path;
+
+    // Deep links públicos: pular splash e ir direto para a rota
+    if (!_hasShownSplash && currentPath == '/splash') {
+      _hasShownSplash = true;
+      // Verificar se a URL real do browser contém um deep link público
+      // go_router em hash mode usa o fragmento da URL
+      final browserUri = Uri.base;
+      final fragment = browserUri.fragment; // ex: /validar/CRP-2026-NR10-0001
+      if (fragment.isNotEmpty) {
+        final isPublicDeepLink = _publicDeepLinkPrefixes.any((p) => fragment.startsWith(p));
+        if (isPublicDeepLink) {
+          debugPrint('[ROUTER] Deep link detectado: $fragment → pulando splash');
+          return '/$fragment'.replaceAll('//', '/'); // Normalizar path
+        }
+      }
+      return null; // Mostrar splash normalmente
+    }
 
     // Verificar se a rota é protegida
     final isProtected =
