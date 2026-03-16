@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_service.dart';
 
@@ -109,9 +110,14 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
               const SizedBox(height: 24),
 
               _buildField('Nome completo', _nameController, Icons.person_outline),
-              _buildField('CPF', _cpfController, Icons.badge_outlined),
+              _buildField('CPF', _cpfController, Icons.badge_outlined,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [_CpfInputFormatter()],
+                  hintText: '000.000.000-00'),
               _buildField('Telefone', _phoneController, Icons.phone_outlined,
-                  keyboardType: TextInputType.phone),
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [_PhoneInputFormatter()],
+                  hintText: '(00) 00000-0000'),
               _buildField('E-mail', _emailController, Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress, enabled: false),
               _buildField('Empresa', _companyController, Icons.business_outlined),
@@ -123,7 +129,8 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
   }
 
   Widget _buildField(String label, TextEditingController controller, IconData icon,
-      {TextInputType? keyboardType, bool enabled = true}) {
+      {TextInputType? keyboardType, bool enabled = true,
+       List<TextInputFormatter>? inputFormatters, String? hintText}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
@@ -141,8 +148,10 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
             controller: controller,
             enabled: _isEditing && enabled,
             keyboardType: keyboardType,
+            inputFormatters: inputFormatters,
             decoration: InputDecoration(
               prefixIcon: Icon(icon, size: 20),
+              hintText: hintText,
               filled: true,
               fillColor: isDark ? AppColors.darkCard : Colors.grey[100],
               border: OutlineInputBorder(
@@ -167,6 +176,51 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Máscara de CPF: 000.000.000-00
+class _CpfInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final digits = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length > 11) {
+      return oldValue;
+    }
+    final buf = StringBuffer();
+    for (int i = 0; i < digits.length; i++) {
+      if (i == 3 || i == 6) buf.write('.');
+      if (i == 9) buf.write('-');
+      buf.write(digits[i]);
+    }
+    return TextEditingValue(
+      text: buf.toString(),
+      selection: TextSelection.collapsed(offset: buf.length),
+    );
+  }
+}
+
+/// Máscara de telefone: (00) 00000-0000
+class _PhoneInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final digits = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length > 11) {
+      return oldValue;
+    }
+    final buf = StringBuffer();
+    for (int i = 0; i < digits.length; i++) {
+      if (i == 0) buf.write('(');
+      if (i == 2) buf.write(') ');
+      if (i == 7) buf.write('-');
+      buf.write(digits[i]);
+    }
+    return TextEditingValue(
+      text: buf.toString(),
+      selection: TextSelection.collapsed(offset: buf.length),
     );
   }
 }

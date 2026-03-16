@@ -854,6 +854,12 @@ const TASKS = [
         desc:"Antes retornava 0.0 se não tinha enrollment. Agora cria enrollment automaticamente ao marcar primeira aula como concluída, com totalLessons correto.", files:["lib/services/local_storage_service.dart"], prompt:"" },
       { id:66, status:"done", priority:"done", title:"FIX: CourseDetail recarrega ao voltar do player",
         desc:"Navigator.push.then() agora recarrega _completedLessonIds do LocalStorageService ao voltar. Conteúdo programático reflete aulas concluídas em tempo real.", files:["lib/screens/course_detail_screen.dart"], prompt:"" },
+      { id:67, status:"done", priority:"done", title:"FIX: Máscaras CPF/telefone no PersonalDataScreen",
+        desc:"Adicionados TextInputFormatter customizados: CPF (000.000.000-00) e telefone ((00) 00000-0000). Campos limitados a números com formatação automática.", files:["lib/screens/student/personal_data_screen.dart"], prompt:"" },
+      { id:68, status:"done", priority:"done", title:"FIX: PaymentsScreen dinâmico com LocalStorageService",
+        desc:"Removido mock hardcoded de 3 pagamentos. Agora lê de LocalStorageService.getPayments(). Totais calculados dinamicamente. Empty state quando sem pagamentos.", files:["lib/screens/student/payments_screen.dart"], prompt:"" },
+      { id:69, status:"done", priority:"done", title:"FIX: CourseHistoryScreen dinâmico com enrollment real",
+        desc:"Antes mostrava todos os 35 cursos com progress 0. Agora filtra por enrollments reais do LocalStorageService, mostra barra de progresso e porcentagem. Empty state quando sem cursos.", files:["lib/screens/student/course_history_screen.dart"], prompt:"" },
     ]
   }
 ];
