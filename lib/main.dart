@@ -161,7 +161,7 @@ class _CrpAppState extends State<CrpApp> {
       valueListenable: ThemeService.notifier,
       builder: (context, themeMode, _) {
         return MaterialApp.router(
-          title: 'CRP Cursos',
+          title: 'Cursos CRP Engenharia',
           debugShowCheckedModeBanner: false,
           routerConfig: _router,
           theme: AppTheme.light,
