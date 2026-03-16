@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../core/theme/app_theme.dart';
 import '../core/app_spacing.dart';
 import '../models/course_model.dart';
 import '../models/lesson_model.dart';
 import '../services/course_service_mock.dart';
 import '../services/local_storage_service.dart';
+import '../services/certificate_eligibility_service.dart';
+import '../providers/auth_service.dart';
 import 'purchase/cart_screen.dart';
 import 'lesson_screen.dart';
+import 'student/quiz_screen.dart';
 
 /// Tela de detalhes do curso (antes da compra).
 /// Baseada no mockup: detalhe_curso.png
@@ -80,6 +84,19 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           SliverAppBar(
             expandedHeight: 160,
             pinned: true,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/home');
+                }
+              },
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.black26,
+              ),
+            ),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(gradient: AppColors.brandGradient),
@@ -339,116 +356,79 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             ),
           ),
 
-          // Espaço para o botão de compra
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
-        ],
-      ),
-      ),
-      ),
+          // Barra de ação (dentro do scroll, respeita o ConstrainedBox)
+          SliverToBoxAdapter(
+            child: Builder(
+              builder: (context) {
+                final isEnrolled = LocalStorageService.isEnrolled(course.id);
+                final isDarkAction = Theme.of(context).brightness == Brightness.dark;
 
-      // Barra inferior — BUG 13: verificar matrícula
-      bottomNavigationBar: Builder(
-        builder: (context) {
-          final isEnrolled = LocalStorageService.isEnrolled(course.id);
-          final isDarkBar = Theme.of(context).brightness == Brightness.dark;
-          
-          return Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDarkBar ? AppColors.darkSurface : Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              child: isEnrolled
-                  ? SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          // Navegar para a primeira aula não concluída
-                          final allLessons = course.modules
-                              .expand((m) => m.lessons)
-                              .toList();
-                          final completed = LocalStorageService
-                              .getCompletedLessons(course.id);
-                          final nextLesson = allLessons.firstWhere(
-                            (l) => !completed.contains(l.id),
-                            orElse: () => allLessons.first,
-                          );
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => LessonPlayerScreen(
-                                lessonId: nextLesson.id,
-                                lesson: nextLesson,
-                                courseId: course.id,
-                                currentIndex:
-                                    allLessons.indexOf(nextLesson) + 1,
-                                totalLessons: allLessons.length,
-                              ),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.play_circle_outline),
-                        label: const Text('Continuar curso',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w600)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.success,
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 16),
-                        ),
+                return Container(
+                  margin: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDarkAction ? AppColors.darkSurface : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
                       ),
-                    )
-                  : Row(
-                      children: [
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    ],
+                  ),
+                  child: isEnrolled
+                      ? _buildEnrolledBottomBar(course, isDarkAction)
+                      : Row(
                           children: [
-                            Text('à vista',
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.grey[500])),
-                            Text(
-                              course.priceFormatted,
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.secondary,
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('à vista',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[500])),
+                                Text(
+                                  course.priceFormatted,
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.secondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        CartScreen(course: course),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 32, vertical: 16),
                               ),
+                              child: const Text('Comprar curso',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600)),
                             ),
                           ],
                         ),
-                        const Spacer(),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => CartScreen(course: course),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 32, vertical: 16),
-                          ),
-                          child: const Text('Comprar curso',
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                      ],
-                    ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
+      ),
+      ),
       ),
     );
   }
@@ -607,6 +587,138 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             });
           });
         },
+      ),
+    );
+  }
+
+  /// Barra inferior dinâmica para aluno matriculado
+  Widget _buildEnrolledBottomBar(Course course, bool isDark) {
+    final progress = LocalStorageService.getProgress(course.id);
+    final quizApproved = LocalStorageService.isQuizApproved(course.id);
+    final quizScore = LocalStorageService.getQuizScore(course.id);
+    final allLessons = course.modules.expand((m) => m.lessons).toList();
+
+    // Estado 1: Quiz aprovado → Ver certificado
+    if (quizApproved && quizScore != null) {
+      final user = AuthService.currentUser;
+      final elig = CertificateEligibilityService.check(
+        progressPercent: progress, quizScore: quizScore,
+        userCpf: user.cpf, userCompany: user.company,
+      );
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                const SizedBox(width: 8),
+                Text('Avaliação aprovada com $quizScore%',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                    color: AppColors.success)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => context.push('/certificate/${course.id}',
+                extra: {'quizScore': quizScore, 'progressPercent': progress}),
+              icon: const Icon(Icons.workspace_premium_outlined),
+              label: Text(elig.isEligible ? 'Ver certificado' : 'Verificar certificado',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.secondary,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Estado 2: Progresso >= 75% → Fazer avaliação
+    if (progress >= 0.75) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.school_outlined, color: AppColors.primary, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('${(progress * 100).toInt()}% concluído — pronto para avaliação!',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                      color: AppColors.primary)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                await Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => QuizScreen(
+                    courseId: course.id, courseTitle: course.title,
+                    progressPercent: progress,
+                  ),
+                ));
+                _loadCourse();
+              },
+              icon: const Icon(Icons.quiz_outlined),
+              label: const Text('Fazer avaliação',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Estado 3: Progresso < 75% → Continuar curso
+    final completed = LocalStorageService.getCompletedLessons(course.id);
+    final nextLesson = allLessons.firstWhere(
+      (l) => !completed.contains(l.id),
+      orElse: () => allLessons.first,
+    );
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () async {
+          await Navigator.push(context, MaterialPageRoute(
+            builder: (_) => LessonPlayerScreen(
+              lessonId: nextLesson.id, lesson: nextLesson,
+              courseId: course.id,
+              currentIndex: allLessons.indexOf(nextLesson) + 1,
+              totalLessons: allLessons.length,
+            ),
+          ));
+          _loadCourse();
+        },
+        icon: const Icon(Icons.play_circle_outline),
+        label: Text('Continuar curso · ${(progress * 100).toInt()}%',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.success,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
       ),
     );
   }

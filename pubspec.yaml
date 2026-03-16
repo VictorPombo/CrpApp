@@ -42,6 +42,8 @@ dependencies:
   qr_flutter: any
   shared_preferences: any
   google_fonts: any
+  crypto: any
+  printing: ^5.14.3
 
 dev_dependencies:
   flutter_test:

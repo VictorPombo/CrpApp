@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'certificate_hash_service.dart';
 
 /// Serviço centralizado de persistência local via SharedPreferences.
 /// Gerencia enrollments, certificados, anotações e pagamentos.
@@ -132,6 +134,35 @@ class LocalStorageService {
   }
 
   // ═══════════════════════════════════════
+  // QUIZ RESULTS
+  // ═══════════════════════════════════════
+
+  /// Salva resultado do quiz no enrollment
+  static Future<void> saveQuizResult(String courseId, int score) async {
+    final list = getEnrollments();
+    final idx = list.indexWhere((e) => e['course_id'] == courseId);
+    if (idx < 0) return;
+    list[idx]['quiz_score'] = score;
+    list[idx]['quiz_approved'] = score >= 70;
+    list[idx]['quiz_date'] = DateTime.now().toIso8601String();
+    await _p.setString(_keyEnrollments, json.encode(list));
+  }
+
+  /// Retorna nota do quiz (null se não fez)
+  static int? getQuizScore(String courseId) {
+    final enrollment = getEnrollment(courseId);
+    if (enrollment == null) return null;
+    return enrollment['quiz_score'] as int?;
+  }
+
+  /// Retorna se o quiz foi aprovado
+  static bool isQuizApproved(String courseId) {
+    final enrollment = getEnrollment(courseId);
+    if (enrollment == null) return false;
+    return enrollment['quiz_approved'] == true;
+  }
+
+  // ═══════════════════════════════════════
   // CERTIFICATES
   // ═══════════════════════════════════════
 
@@ -154,33 +185,61 @@ class LocalStorageService {
     }
   }
 
-  /// Emite certificado para um curso concluído
+  /// Emite certificado para um curso concluido
   static Future<void> issueCertificate({
     required String courseId,
     required String courseCode,
     required String courseTitle,
     required int courseHours,
     required int quizScore,
+    String? studentName,
+    String? studentCpf,
+    String? company,
+    String? instructorName,
+    String? instructorCrea,
   }) async {
     final list = getCertificates();
 
-    // Não duplicar
+    // Nao duplicar
     if (list.any((c) => c['course_id'] == courseId)) return;
 
-    final year = DateTime.now().year;
-    final seq = (list.length + 1).toString().padLeft(4, '0');
-    final code = 'CRP-${courseCode.replaceAll('NR-', '')}-$year-$seq';
+    final now = DateTime.now();
+    final issuedAt = now.toIso8601String();
+    final validUntil = now.add(const Duration(days: 730)).toIso8601String();
+    final seq = list.length + 1;
+
+    // Serial unico deterministico
+    final serial = CertificateHashService.generateSerial(
+      courseCode: courseCode,
+      sequentialNumber: seq,
+      year: now.year,
+    );
+
+    // Hash SHA-256 para autenticidade
+    final hash = CertificateHashService.generateHash(
+      serial: serial,
+      cpf: studentCpf ?? '',
+      courseId: courseId,
+      quizScore: quizScore,
+      issuedAt: issuedAt,
+    );
 
     list.add({
       'course_id': courseId,
       'course_code': courseCode,
       'course_title': courseTitle,
       'course_hours': courseHours,
-      'cert_code': code,
+      'cert_code': serial,
+      'hash': hash,
       'quiz_score': quizScore,
-      'issued_at': DateTime.now().toIso8601String(),
-      'valid_until':
-          DateTime.now().add(const Duration(days: 730)).toIso8601String(),
+      'student_name': studentName ?? 'Aluno',
+      'student_cpf': studentCpf ?? '',
+      'company': company ?? '',
+      'instructor_name': instructorName ?? 'Eng. Fernando Lima',
+      'instructor_crea': instructorCrea ?? 'CREA-SP 567890',
+      'issued_at': issuedAt,
+      'valid_until': validUntil,
+      'status': 'valid', // valid | expired | revoked
     });
 
     await _p.setString(_keyCertificates, json.encode(list));
@@ -257,5 +316,163 @@ class LocalStorageService {
     for (final key in keys) {
       await _p.remove(key);
     }
+    // Forçar reload do cache interno
+    await _p.reload();
+    debugPrint('[CLEAR_ALL] Dados limpos. Keys restantes: ${_p.getKeys()}');
+  }
+
+  /// Seed data para demonstração — cria 4 estados de teste.
+  static Future<void> seedDemoData() async {
+    debugPrint('[SEED] Populando dados de demonstração...');
+
+    // ─── Auto-registro e auto-login do demo user ───
+    await _p.setString('user_carlos_pass', '123456');
+    await _p.setString('user_carlos_email', 'carlos@crptreinamentos.com.br');
+    await _p.setString('user_carlos_cpf', '123.456.789-00');
+    await _p.setString('user_carlos_company', 'CRP Treinamentos');
+    // Persistir sessão ativa
+    await _p.setString('auth_user_id', 'carlos');
+    await _p.setString('auth_user', 'carlos');
+    await _p.setString('auth_email', 'carlos@crptreinamentos.com.br');
+    await _p.setString('auth_cpf', '123.456.789-00');
+    await _p.setString('auth_company', 'CRP Treinamentos');
+    await _p.setString('auth_role', 'student');
+    debugPrint('[SEED] Demo user: carlos / 123456');
+
+    final now = DateTime.now().toIso8601String();
+
+    // ─── Estado 2: NR-05 (CIPA) → Em andamento (~40%, 12 de 30 aulas) ───
+    final nr05Completed = List.generate(12, (i) {
+      final m = (i ~/ 6) + 1;
+      final l = (i % 6) + 1;
+      return 'nr05_m${m}_l$l';
+    });
+
+    // ─── Estado 3: NR-35 → Pronto para quiz (~83%, 20 de 24 aulas) ───
+    final nr35Completed = List.generate(20, (i) {
+      final m = (i ~/ 6) + 1;
+      final l = (i % 6) + 1;
+      return 'nr35_m${m}_l$l';
+    });
+
+    // ─── Estado 4: NR-10 → Completo (100%, quiz aprovado) ───
+    final nr10Completed = List.generate(30, (i) {
+      final m = (i ~/ 6) + 1;
+      final l = (i % 6) + 1;
+      return 'nr10_m${m}_l$l';
+    });
+
+    final enrollments = [
+      {
+        'course_id': 'nr05',
+        'status': 'em_andamento',
+        'progress': 12 / 30, // 40%
+        'completed_lessons': nr05Completed,
+        'total_lessons': 30,
+        'started_at': now,
+        'completed_at': null,
+        'last_accessed_at': now,
+      },
+      {
+        'course_id': 'nr35',
+        'status': 'em_andamento',
+        'progress': 20 / 24, // 83%
+        'completed_lessons': nr35Completed,
+        'total_lessons': 24,
+        'started_at': now,
+        'completed_at': null,
+        'last_accessed_at': now,
+      },
+      {
+        'course_id': 'nr10',
+        'status': 'concluido',
+        'progress': 1.0, // 100%
+        'completed_lessons': nr10Completed,
+        'total_lessons': 30,
+        'started_at': now,
+        'completed_at': now,
+        'last_accessed_at': now,
+        'quiz_score': 85,
+        'quiz_approved': true,
+        'quiz_date': now,
+      },
+    ];
+
+    await _p.setString(_keyEnrollments, json.encode(enrollments));
+
+    // Certificado para NR-10 (com hash SHA-256)
+    final nr10Serial = CertificateHashService.generateSerial(
+      courseCode: 'NR-10',
+      sequentialNumber: 1,
+      year: DateTime.now().year,
+    );
+    final nr10IssuedAt = now;
+    final nr10ValidUntil = DateTime.now().add(const Duration(days: 730)).toIso8601String();
+    final nr10Hash = CertificateHashService.generateHash(
+      serial: nr10Serial,
+      cpf: '123.456.789-00',
+      courseId: 'nr10',
+      quizScore: 85,
+      issuedAt: nr10IssuedAt,
+    );
+
+    final certificates = [
+      {
+        'course_id': 'nr10',
+        'course_code': 'NR-10',
+        'course_title': 'Seguranca em Instalacoes e Servicos em Eletricidade',
+        'course_hours': 40,
+        'cert_code': nr10Serial,
+        'hash': nr10Hash,
+        'quiz_score': 85,
+        'student_name': 'carlos',
+        'student_cpf': '123.456.789-00',
+        'company': 'CRP Treinamentos',
+        'instructor_name': 'Eng. Fernando Lima',
+        'instructor_crea': 'CREA-SP 567890',
+        'issued_at': nr10IssuedAt,
+        'valid_until': nr10ValidUntil,
+        'status': 'valid',
+      },
+    ];
+
+    await _p.setString(_keyCertificates, json.encode(certificates));
+
+    // Pagamento para os 3 cursos matriculados
+    final payments = [
+      {
+        'course_id': 'nr05',
+        'course_title': 'CIPA — Comissão Interna de Prevenção de Acidentes',
+        'amount': 'R\$ 189,90',
+        'method': 'Pix',
+        'date': _formatDate(DateTime.now()),
+        'status': 'Aprovado',
+      },
+      {
+        'course_id': 'nr35',
+        'course_title': 'Trabalho em Altura',
+        'amount': 'R\$ 249,90',
+        'method': 'Cartão de Crédito',
+        'date': _formatDate(DateTime.now()),
+        'status': 'Aprovado',
+      },
+      {
+        'course_id': 'nr10',
+        'course_title': 'Segurança em Instalações e Serviços em Eletricidade',
+        'amount': 'R\$ 299,90',
+        'method': 'Boleto',
+        'date': _formatDate(DateTime.now().subtract(const Duration(days: 30))),
+        'status': 'Aprovado',
+      },
+    ];
+
+    await _p.setString(_keyPayments, json.encode(payments));
+
+    // Verificação
+    await _p.reload();
+    final check = _p.getString(_keyEnrollments);
+    debugPrint('[SEED] Enrollments gravados: ${check != null ? '${check.length} chars' : 'NULL!'}');
+    debugPrint('[SEED] isEnrolled(nr35)=${isEnrolled('nr35')}, isEnrolled(nr10)=${isEnrolled('nr10')}, isEnrolled(nr05)=${isEnrolled('nr05')}');
+    debugPrint('[SEED] getProgress(nr35)=${getProgress('nr35')}, getProgress(nr10)=${getProgress('nr10')}, getProgress(nr05)=${getProgress('nr05')}');
   }
 }

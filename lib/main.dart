@@ -10,12 +10,15 @@ import 'screens/register_screen.dart';
 import 'screens/course_detail_screen.dart';
 import 'screens/lesson_screen.dart';
 import 'screens/certificate_screen.dart';
+import 'screens/certificate_validation_screen.dart';
 import 'screens/student/quiz_screen.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LocalStorageService.init();
+  await LocalStorageService.clearAll(); // Reset para demo
+  await LocalStorageService.seedDemoData(); // Popular dados de teste
   await ThemeService.load();
   await AuthService.load(); // Restaurar sessão antes do runApp
   runApp(const CrpApp());
@@ -76,7 +79,19 @@ class _CrpAppState extends State<CrpApp> {
           path: '/certificate/:courseId',
           builder: (context, state) {
             final courseId = state.pathParameters['courseId']!;
-            return CertificateScreen(courseId: courseId);
+            final extra = state.extra as Map<String, dynamic>?;
+            return CertificateScreen(
+              courseId: courseId,
+              quizScore: extra?['quizScore'] as int?,
+              progressPercent: (extra?['progressPercent'] as double?) ?? 1.0,
+            );
+          },
+        ),
+        GoRoute(
+          path: '/validar/:code',
+          builder: (context, state) {
+            final code = state.pathParameters['code']!;
+            return CertificateValidationScreen(code: code);
           },
         ),
         GoRoute(

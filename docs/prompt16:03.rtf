@@ -1,0 +1,825 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2868
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 Times-Roman;\f1\fnil\fcharset0 HelveticaNeue;}
+{\colortbl;\red255\green255\blue255;\red16\green19\blue24;\red0\green0\blue0;\red0\green0\blue0;
+\red0\green0\blue233;}
+{\*\expandedcolortbl;;\cssrgb\c7843\c9412\c12157;\cssrgb\c0\c0\c0;\cssrgb\c0\c0\c0\c84706;
+\cssrgb\c0\c0\c93333;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid1\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat0\levelspace360\levelindent0{\*\levelmarker \{circle\}}{\leveltext\leveltemplateid2\'01\uc0\u9702 ;}{\levelnumbers;}\fi-360\li1440\lin1440 }{\listname ;}\listid1}
+{\list\listtemplateid2\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat0\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid101\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid2}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 # PROMPT \'97 SISTEMA DE AUTENTICA\'c7\'c3O COMPLETO + 2FA\
+# CRP Cursos \'97 Login, Cadastro e Verifica\'e7\'e3o em Dois Passos\
+\
+---\
+\
+## REGRA OBRIGAT\'d3RIA\
+\
+Ao concluir CADA tarefa, atualizar docs/crp_dev_dashboard.html:\
+- Marcar itens conclu\'eddos: status "todo" ou "bug" \uc0\u8594  "done"\
+- Adicionar novos itens descobertos com status correto\
+- Salvar o arquivo antes de avan\'e7ar para a pr\'f3xima tarefa\
+\
+---\
+\
+## CONTEXTO\
+\
+Implementar o sistema de autentica\'e7\'e3o completo do app CRP Cursos.\
+Hoje o login \'e9 mock (qualquer credencial funciona).\
+\
+Esta implementa\'e7\'e3o tem DUAS FASES:\
+\
+FASE A \'97 Implementar agora (mock robusto com estrutura real)\
+Criar toda a UI, valida\'e7\'f5es, fluxos e l\'f3gica de autentica\'e7\'e3o\
+j\'e1 preparada para conectar ao Supabase futuramente.\
+Nenhuma chamada de API real ainda \'97 usar AuthService local.\
+\
+FASE B \'97 Quando conectar o Supabase (instru\'e7\'f5es no final)\
+Substituir apenas a camada de servi\'e7o (AuthService) sem\
+precisar reescrever nenhuma tela ou l\'f3gica de UI.\
+\
+---\
+\
+## ARQUITETURA DE AUTENTICA\'c7\'c3O\
+\
+Criar a seguinte estrutura:\
+\
+lib/\
+\uc0\u9500 \u9472 \u9472  services/\
+\uc0\u9474    \u9500 \u9472 \u9472  auth_service.dart          \u8592  interface abstrata\
+\uc0\u9474    \u9500 \u9472 \u9472  mock_auth_service.dart     \u8592  implementa\'e7\'e3o mock (FASE A)\
+\uc0\u9474    \u9492 \u9472 \u9472  supabase_auth_service.dart \u8592  implementa\'e7\'e3o Supabase (FASE B - criar esqueleto)\
+\uc0\u9500 \u9472 \u9472  models/\
+\uc0\u9474    \u9492 \u9472 \u9472  user_model.dart            \u8592  modelo completo do usu\'e1rio\
+\uc0\u9500 \u9472 \u9472  screens/auth/\
+\uc0\u9474    \u9500 \u9472 \u9472  login_screen.dart\
+\uc0\u9474    \u9500 \u9472 \u9472  register_screen.dart\
+\uc0\u9474    \u9500 \u9472 \u9472  forgot_password_screen.dart\
+\uc0\u9474    \u9500 \u9472 \u9472  reset_password_screen.dart\
+\uc0\u9474    \u9500 \u9472 \u9472  verify_email_screen.dart\
+\uc0\u9474    \u9492 \u9472 \u9472  two_factor_screen.dart\
+\uc0\u9492 \u9472 \u9472  widgets/auth/\
+    \uc0\u9500 \u9472 \u9472  auth_text_field.dart       \u8592  campo reutiliz\'e1vel com valida\'e7\'e3o\
+    \uc0\u9500 \u9472 \u9472  auth_button.dart           \u8592  bot\'e3o com loading state\
+    \uc0\u9492 \u9472 \u9472  password_strength.dart    \u8592  indicador de for\'e7a da senha\
+\
+---\
+\
+## TAREFA 1 \'97 UserModel e AuthService abstrato\
+\
+### lib/models/user_model.dart\
+```dart\
+class UserModel \{\
+  final String id;\
+  final String name;\
+  final String email;\
+  final String? cpf;\
+  final String? phone;\
+  final String? company;\
+  final String? jobTitle;\
+  final String? avatarUrl;\
+  final bool emailVerified;\
+  final bool twoFactorEnabled;\
+  final String? twoFactorSecret;\
+  final DateTime createdAt;\
+  final String role; // 'student' | 'admin'\
+\
+  // Getter para iniciais do avatar\
+  String get initials \{\
+    final parts = name.trim().split(' ');\
+    if (parts.length >= 2) \{\
+      return '$\{parts.first[0]\}$\{parts.last[0]\}'.toUpperCase();\
+    \}\
+    return name.substring(0, min(2, name.length)).toUpperCase();\
+  \}\
+\
+  // Getter para verificar dados completos (necess\'e1rio para certificado)\
+  bool get hasCompleteProfile =>\
+      cpf != null && cpf!.isNotEmpty &&\
+      company != null && company!.isNotEmpty;\
+\
+  UserModel copyWith(\{...\}); // todos os campos\
+  Map<String, dynamic> toJson();\
+  factory UserModel.fromJson(Map<String, dynamic> json);\
+\}\
+```\
+\
+### lib/services/auth_service.dart (interface abstrata)\
+```dart\
+abstract class AuthService extends ChangeNotifier \{\
+  UserModel? get currentUser;\
+  bool get isAuthenticated;\
+  bool get isLoading;\
+  String? get errorMessage;\
+\
+  Future<AuthResult> signIn(\{\
+    required String email,\
+    required String password,\
+  \});\
+\
+  Future<AuthResult> signUp(\{\
+    required String name,\
+    required String email,\
+    required String password,\
+  \});\
+\
+  Future<void> signOut();\
+  Future<void> sendPasswordResetEmail(String email);\
+  Future<void> verifyEmail(String token);\
+  Future<AuthResult> verifyTwoFactor(String code);\
+  Future<void> enableTwoFactor();\
+  Future<void> disableTwoFactor(String code);\
+  Future<void> updateProfile(UserModel updated);\
+  Future<void> restoreSession();\
+\}\
+\
+class AuthResult \{\
+  final bool success;\
+  final String? errorMessage;\
+  final AuthNextStep nextStep; // none | verifyEmail | twoFactor\
+\
+  const AuthResult(\{\
+    required this.success,\
+    this.errorMessage,\
+    this.nextStep = AuthNextStep.none,\
+  \});\
+\}\
+\
+enum AuthNextStep \{ none, verifyEmail, twoFactor \}\
+```\
+\
+### lib/services/mock_auth_service.dart\
+```dart\
+// Implementa\'e7\'e3o mock completa para desenvolvimento.\
+// Simula todos os fluxos sem backend real.\
+// SUBSTITUIR por SupabaseAuthService quando conectar o Supabase.\
+\
+class MockAuthService extends AuthService \{\
+\
+  // Banco de usu\'e1rios mock em mem\'f3ria\
+  final List<Map<String, dynamic>> _mockUsers = [\
+    \{\
+      'id': 'user_001',\
+      'name': 'Carlos Alberto Silva',\
+      'email': 'carlos@email.com',\
+      'password': 'senha123',\
+      'cpf': '123.456.789-00',\
+      'company': 'Construtora ABC',\
+      'emailVerified': true,\
+      'twoFactorEnabled': false,\
+      'role': 'student',\
+    \}\
+  ];\
+\
+  @override\
+  Future<AuthResult> signIn(\{required String email, required String password\}) async \{\
+    _setLoading(true);\
+    await Future.delayed(const Duration(seconds: 1)); // simula lat\'eancia\
+\
+    final user = _mockUsers.firstWhereOrNull(\
+      (u) => u['email'] == email.toLowerCase().trim(),\
+    );\
+\
+    if (user == null) \{\
+      _setError('E-mail n\'e3o encontrado.');\
+      return AuthResult(success: false, errorMessage: 'E-mail n\'e3o encontrado.');\
+    \}\
+\
+    if (user['password'] != password) \{\
+      _setError('Senha incorreta.');\
+      return AuthResult(success: false, errorMessage: 'Senha incorreta.');\
+    \}\
+\
+    if (user['twoFactorEnabled'] == true) \{\
+      // Salvar usu\'e1rio pendente de 2FA\
+      _pendingUser = UserModel.fromJson(user);\
+      _setLoading(false);\
+      return AuthResult(success: true, nextStep: AuthNextStep.twoFactor);\
+    \}\
+\
+    await _loginUser(user);\
+    return const AuthResult(success: true);\
+  \}\
+\
+  @override\
+  Future<AuthResult> signUp(\{\
+    required String name,\
+    required String email,\
+    required String password,\
+  \}) async \{\
+    _setLoading(true);\
+    await Future.delayed(const Duration(seconds: 1));\
+\
+    final exists = _mockUsers.any(\
+      (u) => u['email'] == email.toLowerCase().trim(),\
+    );\
+\
+    if (exists) \{\
+      _setError('Este e-mail j\'e1 est\'e1 cadastrado.');\
+      return AuthResult(success: false, errorMessage: 'E-mail j\'e1 cadastrado.');\
+    \}\
+\
+    final newUser = \{\
+      'id': 'user_$\{DateTime.now().millisecondsSinceEpoch\}',\
+      'name': name.trim(),\
+      'email': email.toLowerCase().trim(),\
+      'password': password,\
+      'emailVerified': false, // mock: exigir verifica\'e7\'e3o\
+      'twoFactorEnabled': false,\
+      'role': 'student',\
+    \};\
+\
+    _mockUsers.add(newUser);\
+    await _loginUser(newUser);\
+    _setLoading(false);\
+\
+    // Mock: simular que e-mail de verifica\'e7\'e3o foi enviado\
+    return const AuthResult(success: true, nextStep: AuthNextStep.verifyEmail);\
+  \}\
+\
+  @override\
+  Future<AuthResult> verifyTwoFactor(String code) async \{\
+    await Future.delayed(const Duration(milliseconds: 800));\
+    // Mock: c\'f3digo correto \'e9 "123456"\
+    if (code == '123456') \{\
+      if (_pendingUser != null) \{\
+        _currentUser = _pendingUser;\
+        _pendingUser = null;\
+        await _persistSession(_currentUser!);\
+        notifyListeners();\
+      \}\
+      return const AuthResult(success: true);\
+    \}\
+    return const AuthResult(\
+      success: false,\
+      errorMessage: 'C\'f3digo inv\'e1lido. Verifique o app autenticador.',\
+    );\
+  \}\
+\}\
+```\
+\
+### lib/services/supabase_auth_service.dart (esqueleto FASE B)\
+```dart\
+// FASE B \'97 conectar quando Supabase estiver configurado.\
+// Substituir MockAuthService por SupabaseAuthService no main.dart.\
+// NENHUMA tela precisa ser alterada \'97 apenas esta troca no Provider.\
+\
+class SupabaseAuthService extends AuthService \{\
+\
+  @override\
+  Future<AuthResult> signIn(\{required String email, required String password\}) async \{\
+    // TODO FASE B:\
+    // final response = await Supabase.instance.client.auth.signInWithPassword(\
+    //   email: email,\
+    //   password: password,\
+    // );\
+    // Tratar MFA challenge se habilitado\
+    throw UnimplementedError('Conectar Supabase na Fase B');\
+  \}\
+\
+  @override\
+  Future<AuthResult> signUp(\{...\}) async \{\
+    // TODO FASE B:\
+    // await Supabase.instance.client.auth.signUp(\
+    //   email: email,\
+    //   password: password,\
+    //   data: \{'name': name\},\
+    // );\
+    throw UnimplementedError('Conectar Supabase na Fase B');\
+  \}\
+\
+  @override\
+  Future<AuthResult> verifyTwoFactor(String code) async \{\
+    // TODO FASE B:\
+    // await Supabase.instance.client.auth.mfa.challengeAndVerify(\
+    //   factorId: factorId,\
+    //   code: code,\
+    // );\
+    throw UnimplementedError('Conectar Supabase na Fase B');\
+  \}\
+\
+  // ... demais m\'e9todos com TODO FASE B\
+\}\
+```\
+\
+**Crit\'e9rio de aceite:**\
+- UserModel completo com todos os campos\
+- AuthService abstrato com todos os m\'e9todos\
+- MockAuthService funcional para login/cadastro/2FA\
+- SupabaseAuthService com esqueleto e coment\'e1rios TODO\
+- Atualizar dashboard: marcar "Autentica\'e7\'e3o \'97 estrutura" como done\
+\
+---\
+\
+## TAREFA 2 \'97 Widgets reutiliz\'e1veis de autentica\'e7\'e3o\
+\
+### lib/widgets/auth/auth_text_field.dart\
+```dart\
+// Campo de texto padr\'e3o para telas de autentica\'e7\'e3o.\
+// Inclui valida\'e7\'e3o, \'edcone, toggle de senha e estados de erro.\
+\
+class AuthTextField extends StatelessWidget \{\
+  final String label;\
+  final String? hint;\
+  final TextEditingController controller;\
+  final String? Function(String?)? validator;\
+  final bool obscureText;\
+  final bool showPasswordToggle;\
+  final TextInputType keyboardType;\
+  final Widget? prefixIcon;\
+  final String? errorText;\
+  final bool enabled;\
+  final void Function(String)? onChanged;\
+\
+  // Variantes prontas:\
+  static AuthTextField email(\{required controller, onChanged\}) => ...\
+  static AuthTextField password(\{required controller, onChanged\}) => ...\
+  static AuthTextField name(\{required controller\}) => ...\
+  static AuthTextField cpf(\{required controller\}) => ...      // m\'e1scara XXX.XXX.XXX-XX\
+  static AuthTextField phone(\{required controller\}) => ...    // m\'e1scara (XX) XXXXX-XXXX\
+  static AuthTextField company(\{required controller\}) => ...\
+\}\
+```\
+\
+### lib/widgets/auth/password_strength.dart\
+```dart\
+// Indicador visual de for\'e7a da senha em tempo real.\
+// Aparece abaixo do campo de senha no cadastro.\
+\
+// Crit\'e9rios de for\'e7a:\
+// Fraca:    < 6 chars                    \uc0\u8594  barra vermelha\
+// M\'e9dia:    6+ chars, sem mai\'fascula/n\'famero \uc0\u8594  barra \'e2mbar\
+// Boa:      6+ chars, mai\'fascula OU n\'famero  \uc0\u8594  barra azul\
+// Forte:    8+ chars, mai\'fascula E n\'famero E especial \uc0\u8594  barra verde\
+\
+class PasswordStrengthIndicator extends StatelessWidget \{\
+  final String password;\
+  // Barra colorida + texto: "Fraca" / "M\'e9dia" / "Boa" / "Forte"\
+\}\
+```\
+\
+**Crit\'e9rio de aceite:**\
+- AuthTextField funcional com todos os tipos\
+- M\'e1scara de CPF e telefone funcionando\
+- PasswordStrengthIndicator com 4 n\'edveis visuais\
+- Atualizar dashboard\
+\
+---\
+\
+## TAREFA 3 \'97 LoginScreen\
+\
+### lib/screens/auth/login_screen.dart\
+\
+**Layout (de cima para baixo):**\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \strokec3 Logo CRP centralizado (topo) "Bem-vindo de volta" \'97 t\'edtulo "Acesse sua conta" \'97 subt\'edtulo\
+AuthTextField.email (e-mail) AuthTextField.password (senha com toggle mostrar/ocultar)\
+Link "Esqueci minha senha" (alinhado \'e0 direita)\
+AuthButton "Entrar" (largura total, com loading state)\
+Divisor "ou"\
+Texto "N\'e3o tem conta? Criar conta" \uc0\u8594  RegisterScreen\
+\pard\pardeftab720\qc\partightenfactor0
+
+\f1\fs22 \cf4 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \strokec2 \
+**Valida\'e7\'f5es antes de submeter:**\
+- E-mail: formato v\'e1lido (RegExp)\
+- Senha: n\'e3o vazia, m\'ednimo 6 caracteres\
+\
+**Comportamento ao submeter:**\
+```dart\
+final result = await authService.signIn(\
+  email: emailController.text,\
+  password: passwordController.text,\
+);\
+\
+switch (result.nextStep) \{\
+  case AuthNextStep.none:\
+    // Login completo \uc0\u8594  redirecionar\
+    final redirect = GoRouterState.of(context)\
+        .uri.queryParameters['redirect'];\
+    context.go(redirect ?? '/home');\
+    break;\
+\
+  case AuthNextStep.twoFactor:\
+    // Ir para tela de 2FA\
+    context.push('/auth/two-factor');\
+    break;\
+\
+  case AuthNextStep.verifyEmail:\
+    context.push('/auth/verify-email');\
+    break;\
+\}\
+```\
+\
+**Estados de erro:**\
+- Erro da API: SnackBar vermelho com mensagem\
+- Campos inv\'e1lidos: erro inline abaixo de cada campo\
+- Loading: bot\'e3o desabilitado + CircularProgressIndicator\
+\
+**Crit\'e9rio de aceite:**\
+- Login funciona com mock (carlos@email.com / senha123)\
+- Erro claro para credenciais inv\'e1lidas\
+- Redireciona corretamente em cada nextStep\
+- Atualizar dashboard\
+\
+---\
+\
+## TAREFA 4 \'97 RegisterScreen\
+\
+### lib/screens/auth/register_screen.dart\
+\
+**Layout:**\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \strokec3 \uc0\u8592  Voltar\
+"Criar sua conta" \'97 t\'edtulo "Comece a aprender hoje" \'97 subt\'edtulo\
+AuthTextField.name (nome completo) AuthTextField.email AuthTextField.password + PasswordStrengthIndicator AuthTextField "Confirmar senha"\
+Checkbox: "Aceito os Termos de Uso e Pol\'edtica de Privacidade" \uc0\u8594  "Termos de Uso" e "Pol\'edtica de Privacidade" s\'e3o links clic\'e1veis que abrem um AlertDialog com o texto (mock)\
+AuthButton "Criar conta"\
+"J\'e1 tenho conta? Fazer login" \uc0\u8594  LoginScreen\
+\pard\pardeftab720\qc\partightenfactor0
+
+\f1\fs22 \cf4 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \strokec2 \
+**Valida\'e7\'f5es:**\
+- Nome: m\'ednimo 3 caracteres, n\'e3o vazio\
+- E-mail: formato v\'e1lido\
+- Senha: m\'ednimo 6 caracteres\
+- Confirmar senha: igual \'e0 senha\
+- Checkbox termos: obrigat\'f3rio marcar\
+\
+**Ap\'f3s cadastro bem-sucedido:**\
+- nextStep == verifyEmail \uc0\u8594  ir para VerifyEmailScreen\
+- nextStep == none \uc0\u8594  ir para /home\
+\
+**Crit\'e9rio de aceite:**\
+- Cadastro cria usu\'e1rio no MockAuthService\
+- Valida\'e7\'f5es funcionam inline\
+- PasswordStrengthIndicator aparece\
+- Checkbox de termos obrigat\'f3rio\
+- Atualizar dashboard\
+\
+---\
+\
+## TAREFA 5 \'97 VerifyEmailScreen\
+\
+### lib/screens/auth/verify_email_screen.dart\
+\
+**Layout:**\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \strokec3 \'cdcone de envelope (grande, centralizado) "Verifique seu e-mail" \'97 t\'edtulo "Enviamos um link de verifica\'e7\'e3o para [email do usu\'e1rio]" \'97 subt\'edtulo\
+Campo de 6 d\'edgitos (OTP input): Row com 6 TextFields de 1 d\'edgito cada \uc0\u8594  foco autom\'e1tico avan\'e7a para pr\'f3ximo campo ao digitar \u8594  backspace volta para campo anterior\
+AuthButton "Verificar" (ativo quando 6 d\'edgitos preenchidos)\
+Link "Reenviar c\'f3digo" (com cooldown de 60 segundos) Contador regressivo: "Reenviar em 45s"\
+Link "Usar e-mail diferente" \uc0\u8594  volta para RegisterScreen\
+\pard\pardeftab720\qc\partightenfactor0
+
+\f1\fs22 \cf4 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \strokec2 \
+**Comportamento:**\
+```dart\
+// Mock: qualquer c\'f3digo de 6 d\'edgitos funciona\
+// No Supabase Fase B: verificar com token real\
+final result = await authService.verifyEmail(otpCode);\
+if (result.success) \{\
+  context.go('/home');\
+\}\
+```\
+\
+**OTP Input Widget:**\
+```dart\
+// 6 campos de 1 d\'edgito com:\
+// - inputFormatters: apenas n\'fameros\
+// - maxLength: 1\
+// - textAlign: center\
+// - foco autom\'e1tico no pr\'f3ximo campo\
+// - colar c\'f3digo completo de uma vez (detectar 6 chars)\
+class OtpInputWidget extends StatefulWidget \{\
+  final void Function(String code) onCompleted;\
+\}\
+```\
+\
+**Crit\'e9rio de aceite:**\
+- OTP input com foco autom\'e1tico entre campos\
+- Reenvio com cooldown de 60s\
+- Mock aceita qualquer c\'f3digo de 6 d\'edgitos\
+- Atualizar dashboard\
+\
+---\
+\
+## TAREFA 6 \'97 ForgotPasswordScreen e ResetPasswordScreen\
+\
+### lib/screens/auth/forgot_password_screen.dart\
+\
+**Layout:**\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \strokec3 \uc0\u8592  Voltar\
+\'cdcone de cadeado "Esqueceu sua senha?" \'97 t\'edtulo "Digite seu e-mail e enviaremos instru\'e7\'f5es para redefinir" \'97 subt\'edtulo\
+AuthTextField.email\
+AuthButton "Enviar instru\'e7\'f5es"\
+\uc0\u8594  Ap\'f3s envio: substituir formul\'e1rio por tela de confirma\'e7\'e3o: \'cdcone de envelope \u10003  "E-mail enviado!" "Verifique sua caixa de entrada em [email]" Link "Voltar ao login"\
+\pard\pardeftab720\qc\partightenfactor0
+
+\f1\fs22 \cf4 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \strokec2 \
+### lib/screens/auth/reset_password_screen.dart\
+```dart\
+// Tela acessada via deep link: /auth/reset-password?token=xxx\
+// Mock: qualquer token funciona\
+\
+Layout:\
+\'cdcone de cadeado\
+"Redefinir senha" \'97 t\'edtulo\
+\
+AuthTextField.password (nova senha + PasswordStrengthIndicator)\
+AuthTextField "Confirmar nova senha"\
+\
+AuthButton "Redefinir senha"\
+\
+\uc0\u8594  Ap\'f3s sucesso:\
+  \'cdcone \uc0\u10003  verde\
+  "Senha redefinida com sucesso!"\
+  Bot\'e3o "Fazer login" \uc0\u8594  LoginScreen\
+```\
+\
+**Crit\'e9rio de aceite:**\
+- Fluxo completo de recupera\'e7\'e3o funciona\
+- Deep link /auth/reset-password configurado no GoRouter\
+- Atualizar dashboard\
+\
+---\
+\
+## TAREFA 7 \'97 TwoFactorScreen (verifica\'e7\'e3o em dois passos)\
+\
+### lib/screens/auth/two_factor_screen.dart\
+\
+**Layout:**\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \strokec3 \uc0\u8592  Voltar (volta para login, limpa sess\'e3o pendente)\
+\'cdcone de escudo com check "Verifica\'e7\'e3o em dois passos" \'97 t\'edtulo "Digite o c\'f3digo de 6 d\'edgitos do seu app autenticador (Google Authenticator, Authy, etc.)" \'97 subt\'edtulo\
+OtpInputWidget (reutilizar da VerifyEmailScreen)\
+AuthButton "Verificar" (ativo com 6 d\'edgitos)\
+Link "Usar c\'f3digo de recupera\'e7\'e3o" \uc0\u8594  di\'e1logo: TextField para c\'f3digo de recupera\'e7\'e3o (8 chars alfanum\'e9rico) Mock: aceitar "CRPABCD1"\
+Texto informativo: "Perdeu acesso ao autenticador? Entre em contato: {\field{\*\fldinst{HYPERLINK "mailto:suporte@crpengenharia.com.br"}}{\fldrslt \cf5 \ul \ulc5 \strokec5 suporte@crpengenharia.com.br}}"\
+\pard\pardeftab720\qc\partightenfactor0
+
+\f1\fs22 \cf4 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \strokec2 \
+**Comportamento:**\
+```dart\
+final result = await authService.verifyTwoFactor(code);\
+if (result.success) \{\
+  final redirect = GoRouterState.of(context)\
+      .uri.queryParameters['redirect'];\
+  context.go(redirect ?? '/home');\
+\} else \{\
+  // Mostrar erro inline\
+  // Ap\'f3s 5 tentativas erradas: bloquear por 30s (mock)\
+\}\
+```\
+\
+**Crit\'e9rio de aceite:**\
+- OTP input id\'eantico ao da VerifyEmailScreen (reutilizar widget)\
+- Mock aceita c\'f3digo "123456"\
+- C\'f3digo de recupera\'e7\'e3o: "CRPABCD1"\
+- Bloqueio ap\'f3s 5 tentativas erradas\
+- Bot\'e3o voltar limpa a sess\'e3o pendente de 2FA\
+- Atualizar dashboard\
+\
+---\
+\
+## TAREFA 8 \'97 Configura\'e7\'e3o de 2FA no Perfil\
+\
+### Em lib/screens/student/profile_screen.dart\
+\
+Adicionar se\'e7\'e3o "Seguran\'e7a" no menu do perfil:\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \strokec3 Se\'e7\'e3o "Seguran\'e7a": \uc0\u9500 \u9472 \u9472  Alterar senha \u8594  ChangePasswordScreen (j\'e1 existe) \u9500 \u9472 \u9472  Verifica\'e7\'e3o em dois passos \u8594  TwoFactorSetupScreen \u9474  Se desabilitado: "Desativada" + chip vermelho \u9474  Se habilitada: "Ativada" + chip verde \u9492 \u9472 \u9472  Dispositivos conectados (futuro \'97 deixar placeholder)\
+\pard\pardeftab720\qc\partightenfactor0
+
+\f1\fs22 \cf4 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \strokec2 \
+### lib/screens/student/two_factor_setup_screen.dart\
+\
+**Fluxo de ATIVA\'c7\'c3O do 2FA:**\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \strokec3 Passo 1 \'97 Introdu\'e7\'e3o: \'cdcone de escudo "Proteja sua conta" \'97 t\'edtulo Explica\'e7\'e3o do que \'e9 2FA e por que usar Bot\'e3o "Ativar verifica\'e7\'e3o em dois passos"\
+Passo 2 \'97 Configurar app autenticador: "1. Baixe um app autenticador:" Cards: Google Authenticator | Authy | Microsoft Authenticator\
+"2. Escaneie o QR Code:" QR Code mockado (usar qr_flutter com secret mock) Secret: "JBSWY3DPEHPK3PXP" (mock)\
+"Ou digite o c\'f3digo manualmente:" Text copi\'e1vel com o secret Bot\'e3o "Copiar c\'f3digo"\
+Bot\'e3o "J\'e1 escaneei, continuar"\
+Passo 3 \'97 Confirmar c\'f3digo: "Digite o c\'f3digo gerado pelo app" OtpInputWidget Bot\'e3o "Confirmar e ativar" \uc0\u8594  Mock: aceitar "123456" \u8594  Salvar twoFactorEnabled: true no AuthService + SharedPreferences\
+Passo 4 \'97 Codes de recupera\'e7\'e3o: "Guarde esses c\'f3digos em local seguro" Lista de 8 c\'f3digos de recupera\'e7\'e3o mock (formato: XXXX-XXXX) Bot\'e3o "Copiar todos" Bot\'e3o "Baixar como .txt" Checkbox: "Salvei meus c\'f3digos de recupera\'e7\'e3o" Bot\'e3o "Concluir" (ativo s\'f3 ap\'f3s marcar checkbox)\
+\pard\pardeftab720\qc\partightenfactor0
+
+\f1\fs22 \cf4 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \strokec2 \
+**Fluxo de DESATIVA\'c7\'c3O:**\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \strokec3 Dialog de confirma\'e7\'e3o: "Tem certeza que deseja desativar a verifica\'e7\'e3o em dois passos? Sua conta ficar\'e1 menos segura." Campo: "Digite seu c\'f3digo 2FA para confirmar" OtpInputWidget Bot\'e3o "Desativar" (vermelho) \uc0\u8594  Mock: aceitar "123456" \u8594  Salvar twoFactorEnabled: false\
+\pard\pardeftab720\qc\partightenfactor0
+
+\f1\fs22 \cf4 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \strokec2 \
+**Crit\'e9rio de aceite:**\
+- Fluxo completo de ativa\'e7\'e3o em 4 passos\
+- QR code gerado com qr_flutter\
+- C\'f3digos de recupera\'e7\'e3o exibidos e copi\'e1veis\
+- Desativa\'e7\'e3o com confirma\'e7\'e3o por c\'f3digo\
+- Status aparece corretamente no perfil\
+- Atualizar dashboard\
+\
+---\
+\
+## TAREFA 9 \'97 Rotas e navega\'e7\'e3o de autentica\'e7\'e3o\
+\
+Adicionar/atualizar rotas no GoRouter:\
+```dart\
+// Rotas p\'fablicas de autentica\'e7\'e3o:\
+GoRoute(path: '/auth/login',\
+  builder: (_, __) => const LoginScreen()),\
+GoRoute(path: '/auth/register',\
+  builder: (_, __) => const RegisterScreen()),\
+GoRoute(path: '/auth/forgot-password',\
+  builder: (_, __) => const ForgotPasswordScreen()),\
+GoRoute(path: '/auth/reset-password',\
+  builder: (_, state) => ResetPasswordScreen(\
+    token: state.uri.queryParameters['token'] ?? '',\
+  )),\
+GoRoute(path: '/auth/verify-email',\
+  builder: (_, __) => const VerifyEmailScreen()),\
+GoRoute(path: '/auth/two-factor',\
+  builder: (_, __) => const TwoFactorScreen()),\
+\
+// Rota protegida (redireciona se n\'e3o logado):\
+GoRoute(path: '/profile/security/2fa',\
+  builder: (_, __) => const TwoFactorSetupScreen()),\
+```\
+\
+**Atualizar redirect do GoRouter:**\
+```dart\
+redirect: (context, state) \{\
+  final auth = context.read<AuthService>();\
+  final isLoggedIn = auth.isAuthenticated;\
+  final path = state.uri.path;\
+\
+  final protectedPaths = [\
+    '/lesson', '/certificate', '/quiz',\
+    '/profile', '/my-courses',\
+  ];\
+\
+  final authPaths = [\
+    '/auth/login', '/auth/register',\
+    '/auth/forgot-password', '/auth/reset-password',\
+  ];\
+\
+  // Se logado tentando acessar tela de auth \uc0\u8594  ir para home\
+  if (isLoggedIn && authPaths.any((p) => path.startsWith(p))) \{\
+    return '/home';\
+  \}\
+\
+  // Se n\'e3o logado tentando acessar \'e1rea protegida\
+  if (!isLoggedIn && protectedPaths.any((p) => path.startsWith(p))) \{\
+    final destination = Uri.encodeComponent(state.uri.toString());\
+    return '/auth/login?redirect=$destination';\
+  \}\
+\
+  return null;\
+\},\
+```\
+\
+**Crit\'e9rio de aceite:**\
+- Todas as rotas funcionam\
+- Redirect ap\'f3s login correto\
+- Usu\'e1rio logado n\'e3o acessa telas de auth\
+- Atualizar dashboard\
+\
+---\
+\
+## TAREFA 10 \'97 Atualizar main.dart e Providers\
+```dart\
+void main() async \{\
+  WidgetsFlutterBinding.ensureInitialized();\
+\
+  // Inicializar AuthService e restaurar sess\'e3o\
+  final authService = MockAuthService(); // \uc0\u8592  FASE B: trocar por SupabaseAuthService()\
+  await authService.restoreSession();\
+\
+  runApp(\
+    MultiProvider(\
+      providers: [\
+        ChangeNotifierProvider<AuthService>.value(value: authService),\
+        // ... demais providers\
+      ],\
+      child: const CrpApp(),\
+    ),\
+  );\
+\}\
+```\
+\
+**Crit\'e9rio de aceite:**\
+- Sess\'e3o restaurada ao abrir o app\
+- Provider correto injetado\
+- Coment\'e1rio claro indicando onde trocar para Supabase\
+- Atualizar dashboard\
+\
+---\
+\
+## FASE B \'97 INSTRU\'c7\'d5ES PARA QUANDO CONECTAR O SUPABASE\
+## (N\'c3O implementar agora \'97 apenas deixar coment\'e1rios no c\'f3digo)\
+\
+Quando chegar o momento de conectar o Supabase, os passos ser\'e3o:\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls1\ilvl0\cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	1	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 flutter pub add supabase_flutter\
+\ls1\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	2	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Em main.dart: await Supabase.initialize( url: 'SUA_SUPABASE_URL', anonKey: 'SUA_SUPABASE_ANON_KEY', );\
+\ls1\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	3	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Implementar SupabaseAuthService (esqueleto j\'e1 criado na Tarefa 1):\
+\pard\tx940\tx1440\pardeftab720\li1440\fi-1440\partightenfactor0
+\ls1\ilvl1\cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u9702 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 signIn \uc0\u8594  supabase.auth.signInWithPassword()\
+\ls1\ilvl1\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u9702 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 signUp \uc0\u8594  supabase.auth.signUp()\
+\ls1\ilvl1\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u9702 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 signOut \uc0\u8594  supabase.auth.signOut()\
+\ls1\ilvl1\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u9702 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 2FA \uc0\u8594  supabase.auth.mfa.challengeAndVerify()\
+\ls1\ilvl1\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u9702 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Reset senha \uc0\u8594  supabase.auth.resetPasswordForEmail()\
+\ls1\ilvl1\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u9702 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Verify email \uc0\u8594  autom\'e1tico pelo Supabase\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls1\ilvl0\cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	4	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Em main.dart \'97 UMA linha para trocar: ANTES: final authService = MockAuthService(); DEPOIS: final authService = SupabaseAuthService();\
+\ls1\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	5	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 NENHUMA tela precisa ser alterada. Todo o resto do app continua funcionando igual.\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 Configura\'e7\'f5es Supabase necess\'e1rias:\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls2\ilvl0\cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Email confirmations: habilitado\
+\ls2\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 MFA (TOTP): habilitado nas configura\'e7\'f5es de Auth\
+\ls2\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Site URL: URL do app em produ\'e7\'e3o\
+\ls2\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Redirect URLs: crpengenharia.com.br/auth/callback\
+\pard\pardeftab720\qc\partightenfactor0
+
+\f1\fs22 \cf4 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \strokec2 \
+---\
+\
+## AP\'d3S CONCLUIR TODAS AS 10 TAREFAS\
+\
+Executar:\
+```bash\
+flutter analyze\
+flutter build web --debug\
+```\
+\
+Testar manualmente o fluxo completo:\
+1. Cadastro \uc0\u8594  verifica\'e7\'e3o de e-mail \u8594  home\
+2. Login com 2FA desabilitado \uc0\u8594  home\
+3. Ativar 2FA \uc0\u8594  salvar c\'f3digos \u8594  logout\
+4. Login com 2FA ativado \uc0\u8594  inserir c\'f3digo \u8594  home\
+5. Esqueci senha \uc0\u8594  receber link \u8594  redefinir \u8594  login\
+6. Tentar acessar /my-courses sem login \uc0\u8594  redireciona para login\
+7. Ap\'f3s login \uc0\u8594  volta para /my-courses\
+\
+Relat\'f3rio final:\
+- Tarefas conclu\'eddas\
+- Arquivos criados/modificados\
+- Dashboard atualizado (listar itens marcados como done)\
+- Percentual de progresso do MVP\
+\
+---\
+\
+## COMECE PELA TAREFA 1 \'97 UserModel e AuthService\
+\
+Implemente apenas a Tarefa 1 e aguarde confirma\'e7\'e3o.\
+Lembre de atualizar docs/crp_dev_dashboard.html ao concluir.\
+}

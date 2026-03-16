@@ -195,21 +195,33 @@ class _CatalogPageState extends State<_CatalogPage> {
                         const SizedBox(height: 12),
                         SizedBox(
                           height: 260,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _allCourses.length > 3
-                                ? 3
-                                : _allCourses.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(width: 12),
-                            itemBuilder: (context, index) {
-                              return SizedBox(
-                                width: 280,
-                                child: CourseCard(
-                                    course: _allCourses[index]),
-                              );
-                            },
-                          ),
+                          child: Builder(builder: (context) {
+                            // Cursos em destaque: NR-05 (em andamento),
+                            // NR-35 (pronto para quiz), NR-10 (completo)
+                            final featuredIds = ['nr05', 'nr35', 'nr10'];
+                            final featured = featuredIds
+                                .map((id) => _allCourses
+                                    .where((c) => c.id == id)
+                                    .firstOrNull)
+                                .whereType<Course>()
+                                .toList();
+                            final displayList = featured.isNotEmpty
+                                ? featured
+                                : _allCourses.take(3).toList();
+                            return ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: displayList.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: 12),
+                              itemBuilder: (context, index) {
+                                return SizedBox(
+                                  width: 280,
+                                  child: CourseCard(
+                                      course: displayList[index]),
+                                );
+                              },
+                            );
+                          }),
                         ),
 
                         const SizedBox(height: 24),

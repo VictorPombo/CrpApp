@@ -123,12 +123,12 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                       Row(
                         children: [
                           _StatChip(
-                              value: '${allCourses.length}', label: 'Cursos'),
+                              value: '${enrolledCourses.length}', label: 'Cursos'),
                           _StatChip(
                               value: '${completed.length}',
                               label: 'Concluídos'),
                           _StatChip(
-                              value: '${completed.length}',
+                              value: '${LocalStorageService.getCertificates().length}',
                               label: 'Certificados'),
                         ],
                       ),
@@ -244,6 +244,40 @@ class _MyCourseCard extends StatelessWidget {
     return AppColors.secondary;
   }
 
+  /// Formata data de conclusão real do enrollment
+  String _formatCompletionDate(String courseId) {
+    final enrollment = LocalStorageService.getEnrollment(courseId);
+    if (enrollment == null || enrollment['completed_at'] == null) return '—';
+    try {
+      final date = DateTime.parse(enrollment['completed_at'] as String);
+      final months = [
+        '', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+        'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
+      ];
+      return '${months[date.month]} ${date.year}';
+    } catch (_) {
+      return '—';
+    }
+  }
+
+  /// Calcula label dinâmico para "última aula"
+  String _lastAccessLabel(String courseId) {
+    final enrollment = LocalStorageService.getEnrollment(courseId);
+    if (enrollment == null || enrollment['last_accessed_at'] == null) {
+      return 'Última aula: —';
+    }
+    try {
+      final last = DateTime.parse(enrollment['last_accessed_at'] as String);
+      final diff = DateTime.now().difference(last);
+      if (diff.inDays == 0) return 'Última aula: hoje';
+      if (diff.inDays == 1) return 'Última aula: ontem';
+      if (diff.inDays < 7) return 'Última aula: há ${diff.inDays} dias';
+      return 'Última aula: há ${(diff.inDays / 7).floor()} sem.';
+    } catch (_) {
+      return 'Última aula: —';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -309,7 +343,7 @@ class _MyCourseCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         course.progress >= 1.0
-                            ? 'Concluído em Jan 2025'
+                            ? 'Concluído em ${_formatCompletionDate(course.id)}'
                             : '${course.modulesCount} módulos · ${course.hours}h de conteúdo',
                         style: TextStyle(
                             fontSize: 12,
@@ -378,8 +412,23 @@ class _MyCourseCard extends StatelessWidget {
             // Action
             Row(
               children: [
-                if (course.progress > 0 && course.progress < 1.0) ...[
-                  Text('Última aula: ontem',
+                if (course.progress >= 0.75 && course.progress < 1.0 && !LocalStorageService.isQuizApproved(course.id)) ...[
+                  Text(_lastAccessLabel(course.id),
+                      style: TextStyle(
+                          fontSize: 12,
+                          color:
+                              isDark ? Colors.grey[500] : Colors.grey[500])),
+                  const Spacer(),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () => context.push('/course/${course.id}'),
+                    child: const Text('Fazer avaliação'),
+                  ),
+                ] else if (course.progress > 0 && course.progress < 1.0) ...[
+                  Text(_lastAccessLabel(course.id),
                       style: TextStyle(
                           fontSize: 12,
                           color:
@@ -390,7 +439,10 @@ class _MyCourseCard extends StatelessWidget {
                     child: const Text('Continuar →'),
                   ),
                 ] else if (course.progress >= 1.0) ...[
-                  Text('Certificado disponível',
+                  Text(
+                      LocalStorageService.isQuizApproved(course.id)
+                          ? 'Certificado disponível'
+                          : 'Avaliação pendente',
                       style: TextStyle(
                           fontSize: 12,
                           color:
@@ -398,8 +450,10 @@ class _MyCourseCard extends StatelessWidget {
                   const Spacer(),
                   OutlinedButton(
                     onPressed: () =>
-                        context.push('/certificate/${course.id}'),
-                    child: const Text('Ver certificado'),
+                        context.push('/course/${course.id}'),
+                    child: Text(LocalStorageService.isQuizApproved(course.id)
+                        ? 'Ver certificado'
+                        : 'Fazer avaliação'),
                   ),
                 ] else ...[
                   Text('Pronto para começar',

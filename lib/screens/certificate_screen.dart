@@ -1,10 +1,16 @@
+import 'dart:typed_data';
+import 'package:printing/printing.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import '../core/theme/app_theme.dart';
 import '../models/certificate_model.dart';
 import '../providers/auth_service.dart';
 import '../services/certificate_eligibility_service.dart';
+import '../services/certificate_hash_service.dart';
 import '../services/course_service_mock.dart';
+import '../services/local_storage_service.dart';
 import '../widgets/certificate_eligibility_card.dart';
 
 /// Tela de certificado com validação de elegibilidade.
@@ -32,6 +38,8 @@ class _CertificateScreenState extends State<CertificateScreen> {
   int _courseHours = 0;
   String _instructorName = '';
   String _instructorCrea = '';
+  int? _resolvedQuizScore;
+  double _resolvedProgress = 1.0;
 
   @override
   void initState() {
@@ -45,12 +53,26 @@ class _CertificateScreenState extends State<CertificateScreen> {
       (c) => c.id == widget.courseId,
       orElse: () => courses.first,
     );
+
+    // Resolver quizScore e progressPercent do enrollment se não vieram via extra
+    int? quizScore = widget.quizScore;
+    double progress = widget.progressPercent;
+    final enrollment = LocalStorageService.getEnrollment(widget.courseId);
+    if (enrollment != null) {
+      quizScore ??= enrollment['quiz_score'] as int?;
+      if (progress == 1.0 && enrollment['progress'] != null) {
+        progress = (enrollment['progress'] as num).toDouble();
+      }
+    }
+
     setState(() {
       _courseTitle = course.title;
       _courseCode = course.code;
       _courseHours = course.hours;
       _instructorName = course.instructorName;
       _instructorCrea = course.instructorCrea;
+      _resolvedQuizScore = quizScore;
+      _resolvedProgress = progress;
       _loading = false;
     });
   }
@@ -74,8 +96,8 @@ class _CertificateScreenState extends State<CertificateScreen> {
 
     // Verificar elegibilidade
     final eligibility = CertificateEligibilityService.check(
-      progressPercent: widget.progressPercent,
-      quizScore: widget.quizScore,
+      progressPercent: _resolvedProgress,
+      quizScore: _resolvedQuizScore,
       userCpf: studentCpf,
       userCompany: studentCompany,
     );
@@ -137,7 +159,9 @@ class _CertificateScreenState extends State<CertificateScreen> {
   ) {
     final now = DateTime.now();
     final validUntil = DateTime(now.year + 2, now.month, now.day);
-    final certCode =
+    // Usar cert_code armazenado se existir (consistência com validação)
+    final storedCert = LocalStorageService.getCertificate(widget.courseId);
+    final certCode = storedCert?['cert_code'] as String? ??
         'CRP-$_courseCode-${now.year}-${now.millisecond.toString().padLeft(4, '0')}';
 
     final certificate = Certificate(
@@ -292,7 +316,7 @@ class _CertificateScreenState extends State<CertificateScreen> {
               // URL de validação
               const SizedBox(height: 4),
               Text(
-                'Valide em: crpengenharia.com.br/validar/$certCode',
+                'Valide em: localhost:8080/#/validar/$certCode',
                 style: TextStyle(fontSize: 10, color: Colors.grey[500]),
               ),
             ],
@@ -319,7 +343,7 @@ class _CertificateScreenState extends State<CertificateScreen> {
                 ),
                 child: QrImageView(
                   data:
-                      'https://crpengenharia.com.br/validar/$certCode',
+                      'http://localhost:8080/#/validar/$certCode',
                   size: 80,
                   backgroundColor: Colors.white,
                 ),
@@ -380,8 +404,38 @@ class _CertificateScreenState extends State<CertificateScreen> {
                         style: TextStyle(
                             fontSize: 11,
                             color: isDark
-                                ? Colors.grey[500]
-                                : Colors.grey[600]),
+                                ? Colors.grey[400]
+                                : Colors.grey[500]),
+                      ),
+                    ],
+                    // SHA-256 hash badge
+                    if (storedCert != null && storedCert['hash'] != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                              color: const Color(0xFF86EFAC), width: 0.5),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.shield,
+                                size: 14, color: Color(0xFF16A34A)),
+                            const SizedBox(width: 4),
+                            Text(
+                              'SHA-256: ${CertificateHashService.shortHash(storedCert['hash'])}',
+                              style: const TextStyle(
+                                fontSize: 9,
+                                fontFamily: 'monospace',
+                                color: Color(0xFF16A34A),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ],
@@ -400,10 +454,7 @@ class _CertificateScreenState extends State<CertificateScreen> {
               child: _ActionButton(
                 icon: Icons.download,
                 label: 'Baixar PDF',
-                onTap: () =>
-                    ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Download em breve!')),
-                ),
+                onTap: () => _downloadPdf(context, certificate, cpf, company),
               ),
             ),
             const SizedBox(width: 12),
@@ -411,11 +462,21 @@ class _CertificateScreenState extends State<CertificateScreen> {
               child: _ActionButton(
                 icon: Icons.share,
                 label: 'Compartilhar',
-                onTap: () =>
-                    ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Compartilhamento em breve!')),
-                ),
+                onTap: () async {
+                  try {
+                    final bytes = await _buildPdfBytes(certificate, cpf, company);
+                    await Printing.sharePdf(
+                      bytes: bytes,
+                      filename: 'Certificado_${certificate.certificateCode}.pdf',
+                    );
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Erro ao compartilhar: $e')),
+                      );
+                    }
+                  }
+                },
               ),
             ),
             const SizedBox(width: 12),
@@ -432,6 +493,215 @@ class _CertificateScreenState extends State<CertificateScreen> {
             ),
           ],
         ),
+      ],
+    );
+  }
+
+  // ═══════════════════════════════════════
+  // PDF — Geração profissional
+  // ═══════════════════════════════════════
+
+  /// Download/compartilhamento do PDF usando package printing.
+  /// Funciona cross-platform: web abre diálogo de impressão/salvar,
+  /// mobile abre share sheet nativo.
+  void _downloadPdf(BuildContext context, Certificate cert, String? cpf, String? company) async {
+    debugPrint('[PDF] _downloadPdf chamado!');
+    try {
+      debugPrint('[PDF] Gerando bytes...');
+      final bytes = await _buildPdfBytes(cert, cpf, company);
+      debugPrint('[PDF] Bytes gerados: ${bytes.length}');
+
+      final fileName = 'Certificado_${cert.certificateCode}.pdf';
+
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename: fileName,
+      );
+
+      debugPrint('[PDF] PDF compartilhado: $fileName');
+    } catch (e, stack) {
+      debugPrint('[PDF] ERRO: $e');
+      debugPrint('[PDF] Stack: $stack');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao gerar PDF: $e')),
+        );
+      }
+    }
+  }
+
+  Future<Uint8List> _buildPdfBytes(Certificate cert, String? cpf, String? company) async {
+    final pdf = pw.Document();
+    final validationUrl = 'http://localhost:8080/#/validar/${cert.certificateCode}';
+
+    // Sanitizar texto para fonte PDF padrão (sem suporte Unicode estendido)
+    String sanitize(String text) {
+      return text
+        .replaceAll('\u2014', '-') // em dash
+        .replaceAll('\u2013', '-') // en dash
+        .replaceAll('\u2022', '|') // bullet
+        .replaceAll('\u00e9', 'e') // é
+        .replaceAll('\u00ea', 'e') // ê
+        .replaceAll('\u00e1', 'a') // á
+        .replaceAll('\u00e3', 'a') // ã
+        .replaceAll('\u00f3', 'o') // ó
+        .replaceAll('\u00ed', 'i') // í
+        .replaceAll('\u00fa', 'u') // ú
+        .replaceAll('\u00e7', 'c') // ç
+        .replaceAll('\u00c3', 'A') // Ã
+        .replaceAll('\u00c9', 'E') // É
+        .replaceAll('\u00cd', 'I') // Í
+        .replaceAll('\u00d3', 'O') // Ó
+        .replaceAll('\u00da', 'U') // Ú
+        .replaceAll('\u00c7', 'C') // Ç
+        .replaceAll('\u00f4', 'o') // ô
+        .replaceAll('\u00e0', 'a') // à
+        .replaceAll('\u00e2', 'a') // â
+        .replaceAll('\u00f5', 'o') // õ
+        .replaceAll('\u00fc', 'u'); // ü
+    }
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4.landscape,
+        margin: const pw.EdgeInsets.all(40),
+        build: (pw.Context ctx) {
+          return pw.Container(
+            padding: const pw.EdgeInsets.all(30),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.amber800, width: 3),
+              borderRadius: pw.BorderRadius.circular(12),
+            ),
+            child: pw.Column(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              children: [
+                // Header
+                pw.Text('CRP ENGENHARIA',
+                    style: pw.TextStyle(
+                        fontSize: 16, fontWeight: pw.FontWeight.bold,
+                        letterSpacing: 4, color: PdfColors.grey700)),
+                pw.SizedBox(height: 2),
+                pw.Text('Treinamentos em Seguranca do Trabalho',
+                    style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+                pw.SizedBox(height: 20),
+
+                // Divider
+                pw.Container(height: 1, color: PdfColors.amber800),
+                pw.SizedBox(height: 20),
+
+                // CERTIFICADO
+                pw.Text('CERTIFICADO DE CONCLUSAO',
+                    style: pw.TextStyle(
+                        fontSize: 22, fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.grey800)),
+                pw.SizedBox(height: 16),
+
+                // Certificamos que
+                pw.Text('Certificamos que',
+                    style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey600)),
+                pw.SizedBox(height: 6),
+
+                // Nome do aluno
+                pw.Text(cert.studentName,
+                    style: pw.TextStyle(
+                        fontSize: 24, fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.grey900)),
+                pw.SizedBox(height: 4),
+
+                // CPF + Empresa
+                if (cpf != null || company != null)
+                  pw.Text(
+                    [if (cpf != null) 'CPF: $cpf', if (company != null) company].join(' | '),
+                    style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
+                  ),
+                pw.SizedBox(height: 10),
+
+                // concluiu com êxito
+                pw.Text('concluiu com exito o curso',
+                    style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey600)),
+                pw.SizedBox(height: 6),
+
+                // Curso
+                pw.Text(sanitize(cert.courseTitle),
+                    textAlign: pw.TextAlign.center,
+                    style: pw.TextStyle(
+                        fontSize: 18, fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.grey800)),
+                pw.SizedBox(height: 8),
+
+                // Nota
+                if (_resolvedQuizScore != null)
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    decoration: pw.BoxDecoration(
+                      color: PdfColors.green50,
+                      borderRadius: pw.BorderRadius.circular(16),
+                    ),
+                    child: pw.Text('Aprovado com $_resolvedQuizScore%',
+                        style: pw.TextStyle(
+                            fontSize: 11, fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.green800)),
+                  ),
+                pw.SizedBox(height: 16),
+
+                // Stats row
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _pdfStat('${cert.courseHours}h', 'Carga horaria'),
+                    _pdfStat(cert.issuedLabel, 'Conclusao'),
+                    _pdfStat(cert.validityLabel, 'Validade'),
+                  ],
+                ),
+                pw.SizedBox(height: 16),
+
+                // Divider
+                pw.Container(height: 1, color: PdfColors.grey300),
+                pw.SizedBox(height: 12),
+
+                // Footer
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('Instrutor: ${sanitize(cert.instructorName)}',
+                            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+                        pw.Text(cert.instructorCrea,
+                            style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey500)),
+                      ],
+                    ),
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        pw.Text('Codigo: ${cert.certificateCode}',
+                            style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold,
+                                color: PdfColors.grey700)),
+                        pw.Text('Valide em: $validationUrl',
+                            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    return await pdf.save();
+  }
+
+  pw.Widget _pdfStat(String value, String label) {
+    return pw.Column(
+      children: [
+        pw.Text(value,
+            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold,
+                color: PdfColors.grey800)),
+        pw.SizedBox(height: 2),
+        pw.Text(label, style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey500)),
       ],
     );
   }
