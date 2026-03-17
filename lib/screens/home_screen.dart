@@ -105,64 +105,83 @@ class _CatalogPageState extends State<_CatalogPage> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Catálogo de Cursos',
-                          style: Theme.of(context).textTheme.titleLarge,
-                          overflow: TextOverflow.ellipsis,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isSmall = constraints.maxWidth <= 500;
+
+                  // Ícones de busca e tema
+                  Widget actionIcons = ValueListenableBuilder<ThemeMode>(
+                    valueListenable: ThemeService.notifier,
+                    builder: (context, mode, _) {
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: 'Buscar cursos',
+                            icon: const Icon(Icons.search),
+                            onPressed: () async {
+                              final courses = _allCourses;
+                              if (!mounted) return;
+                              await showSearch(
+                                context: context,
+                                delegate: _CourseSearchDelegate(courses),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            tooltip: ThemeService.isDark
+                                ? 'Modo claro'
+                                : 'Modo escuro',
+                            icon: Icon(
+                              ThemeService.isDark
+                                  ? Icons.wb_sunny
+                                  : Icons.nightlight_round,
+                              color: ThemeService.isDark
+                                  ? AppColors.secondary
+                                  : Colors.black87,
+                            ),
+                            onPressed: () => ThemeService.toggle(),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+
+                  // Layout unificado com Stack: logo sempre centralizado
+                  return SizedBox(
+                    height: 55,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Título à esquerda (só em telas grandes)
+                        if (!isSmall)
+                          Positioned(
+                            left: 0,
+                            child: Text(
+                              'Catálogo de Cursos',
+                              style: Theme.of(context).textTheme.titleLarge,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        // Logo absolutamente centralizado
+                        Center(
+                          child: Image.asset(
+                            isDark
+                                ? 'assets/images/crp_logo_dark.png'
+                                : 'assets/images/crp_logo.png',
+                            height: 50,
+                            fit: BoxFit.contain,
+                          ),
                         ),
-                      ),
-                      ValueListenableBuilder<ThemeMode>(
-                        valueListenable: ThemeService.notifier,
-                        builder: (context, mode, _) {
-                          return Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                tooltip: 'Buscar cursos',
-                                icon: const Icon(Icons.search),
-                                onPressed: () async {
-                                  final courses = _allCourses;
-                                  if (!mounted) return;
-                                  await showSearch(
-                                    context: context,
-                                    delegate: _CourseSearchDelegate(courses),
-                                  );
-                                },
-                              ),
-                              IconButton(
-                                tooltip: ThemeService.isDark
-                                    ? 'Modo claro'
-                                    : 'Modo escuro',
-                                icon: Icon(
-                                  ThemeService.isDark
-                                      ? Icons.wb_sunny
-                                      : Icons.nightlight_round,
-                                  color: ThemeService.isDark
-                                      ? AppColors.secondary
-                                      : Colors.black87,
-                                ),
-                                onPressed: () => ThemeService.toggle(),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Image.asset(
-                    isDark
-                        ? 'assets/images/crp_logo_dark.png'
-                        : 'assets/images/crp_logo.png',
-                    height: 50,
-                    fit: BoxFit.contain,
-                  ),
-                ],
+                        // Ícones à direita
+                        Positioned(
+                          right: 0,
+                          child: actionIcons,
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
           ),

@@ -936,6 +936,10 @@ const TASKS = [
         desc:"Fullscreen agora detecta orientação via LayoutBuilder (compara maxWidth vs maxHeight). Portrait: Column com flex 7 (vídeo 70%) + flex 3 (anotações 30% abaixo). Landscape: Row com Expanded (vídeo) + SizedBox 30% width (anotações lateral). Borda superior no portrait, borda esquerda no landscape.", files:["lib/screens/lesson_screen.dart"], prompt:"" },
       { id:91, status:"done", priority:"done", title:"FIX: Controles fullscreen — overflow resolvido",
         desc:"Row de controles (exit, -10s, +10s, velocidade, duração, anotações) otimizada: padding zero + constraints compactas (32x32) nos IconButtons, Expanded no texto de duração, sem Spacer. Ícone de anotações sempre visível à direita em qualquer largura de tela.", files:["lib/screens/lesson_screen.dart"], prompt:"" },
+      { id:92, status:"done", priority:"done", title:"FEATURE: Header unificado com Stack — logo centralizado em todas as telas",
+        desc:"Layout Stack único para mobile e desktop. Logo absolutamente centralizado via Center. Título 'Catálogo de Cursos' via Positioned(left) só aparece em telas >500px. Ícones busca/tema via Positioned(right). Elimina desalinhamento visual entre título e logo de vez.", files:["lib/screens/home_screen.dart"], prompt:"" },
+      { id:93, status:"done", priority:"done", title:"FIX: Filtros MyCoursesScreen — scroll horizontal em mobile",
+        desc:"Wrap trocado por SingleChildScrollView(horizontal)+Row para os ChoiceChips de filtro (Todos/Em andamento/Concluídos/Não iniciados). Em mobile os chips ficam em uma linha deslizável ao invés de quebrar em duas linhas.", files:["lib/screens/my_courses_screen.dart"], prompt:"" },
     ]
   }
 ];

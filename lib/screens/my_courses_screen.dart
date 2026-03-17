@@ -135,35 +135,40 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                       const SizedBox(height: 16),
 
                       // Filter chips
-                      Wrap(
-                        spacing: 8,
-                        children: _filters.map((f) {
-                          final selected = f == _selectedFilter;
-                          final isDark = Theme.of(context).brightness == Brightness.dark;
-                          return ChoiceChip(
-                            label: Text(f, style: const TextStyle(fontSize: 13)),
-                            selected: selected,
-                            selectedColor: AppColors.secondary,
-                            backgroundColor: isDark ? AppColors.darkCard : null,
-                            labelStyle: TextStyle(
-                              color: selected
-                                  ? Colors.white
-                                  : isDark
-                                      ? Colors.grey[300]
-                                      : AppColors.textBody,
-                              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                            ),
-                            side: BorderSide(
-                              color: selected
-                                  ? AppColors.secondary
-                                  : isDark
-                                      ? Colors.grey[600]!
-                                      : Colors.grey[300]!,
-                            ),
-                            onSelected: (_) =>
-                                setState(() => _selectedFilter = f),
-                          );
-                        }).toList(),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: _filters.map((f) {
+                            final selected = f == _selectedFilter;
+                            final isDark = Theme.of(context).brightness == Brightness.dark;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text(f, style: const TextStyle(fontSize: 13)),
+                                selected: selected,
+                                selectedColor: AppColors.secondary,
+                                backgroundColor: isDark ? AppColors.darkCard : null,
+                                labelStyle: TextStyle(
+                                  color: selected
+                                      ? Colors.white
+                                      : isDark
+                                          ? Colors.grey[300]
+                                          : AppColors.textBody,
+                                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                                ),
+                                side: BorderSide(
+                                  color: selected
+                                      ? AppColors.secondary
+                                      : isDark
+                                          ? Colors.grey[600]!
+                                          : Colors.grey[300]!,
+                                ),
+                                onSelected: (_) =>
+                                    setState(() => _selectedFilter = f),
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ),
                       const SizedBox(height: 16),
 
