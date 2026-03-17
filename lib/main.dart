@@ -34,10 +34,15 @@ void main() async {
   }
 
   await LocalStorageService.init();
-  await LocalStorageService.clearAll(); // Reset para demo
-  await LocalStorageService.seedDemoData(); // Popular dados de teste
+
+  // Seed demo data apenas no modo mock (não Supabase)
+  if (!SupabaseConfig.useSupabaseAuth) {
+    await LocalStorageService.clearAll(); // Reset para demo
+    await LocalStorageService.seedDemoData(); // Popular dados de teste
+  }
+
   await ThemeService.load();
-  await AuthService.load(); // Restaurar sessão antes do runApp
+  await AuthService.load(); // Restaurar sessão (mock ou Supabase)
   runApp(const CrpApp());
 }
 

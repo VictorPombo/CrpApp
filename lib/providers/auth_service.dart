@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/config/supabase_config.dart';
 
 /// Estado de autenticação do usuário.
-/// Preparado para migração futura para Supabase Auth.
+/// Funciona tanto com mock (SharedPreferences) quanto com Supabase real.
 class AuthState {
   final bool loggedIn;
   final String? userId;
@@ -46,11 +48,18 @@ class AuthState {
       );
 }
 
-/// Serviço de autenticação com ValueNotifier.
-/// Usa SharedPreferences para persistência local.
-/// Interface preparada para trocar por Supabase Auth sem retrabalho.
+/// Serviço de autenticação unificado.
+///
+/// Quando [SupabaseConfig.useSupabaseAuth] é `false`:
+///   → Usa SharedPreferences (mock local, dados de demonstração)
+///
+/// Quando [SupabaseConfig.useSupabaseAuth] é `true`:
+///   → Usa Supabase Auth real (tabela profiles no PostgreSQL)
+///
+/// A interface externa (AuthService.login, AuthService.isAuthenticated, etc.)
+/// permanece idêntica — nenhuma tela precisa mudar.
 class AuthService {
-  // Chaves de persistência
+  // Chaves de persistência (mock)
   static const _keyUserId = 'auth_user_id';
   static const _keyUser = 'auth_user';
   static const _keyEmail = 'auth_email';
@@ -68,8 +77,282 @@ class AuthService {
   /// Atalho para o estado atual
   static AuthState get currentUser => notifier.value;
 
+  /// Helper: Supabase client (só quando useSupabaseAuth = true)
+  static SupabaseClient get _supa => Supabase.instance.client;
+
+  // ═══════════════════════════════════════════════
+  // LOAD / RESTORE SESSION
+  // ═══════════════════════════════════════════════
+
   /// Restaura sessão persistida (chamar antes do runApp)
   static Future<void> load() async {
+    if (SupabaseConfig.useSupabaseAuth) {
+      await _supaRestoreSession();
+    } else {
+      await _mockRestoreSession();
+    }
+  }
+
+  // ═══════════════════════════════════════════════
+  // LOGIN
+  // ═══════════════════════════════════════════════
+
+  /// Login com credenciais.
+  ///
+  /// Mock: `username` + `password`
+  /// Supabase: `username` é tratado como email + `password`
+  static Future<bool> login(String username, String password) async {
+    if (SupabaseConfig.useSupabaseAuth) {
+      return _supaLogin(username, password);
+    } else {
+      return _mockLogin(username, password);
+    }
+  }
+
+  // ═══════════════════════════════════════════════
+  // REGISTER
+  // ═══════════════════════════════════════════════
+
+  /// Registro de nova conta.
+  static Future<bool> register({
+    required String username,
+    required String password,
+    String? email,
+    String? cpf,
+    String? company,
+  }) async {
+    if (SupabaseConfig.useSupabaseAuth) {
+      return _supaRegister(
+        name: username,
+        email: email ?? username,
+        password: password,
+        cpf: cpf,
+        company: company,
+      );
+    } else {
+      return _mockRegister(
+        username: username,
+        password: password,
+        email: email,
+        cpf: cpf,
+        company: company,
+      );
+    }
+  }
+
+  // ═══════════════════════════════════════════════
+  // PROFILE UPDATE
+  // ═══════════════════════════════════════════════
+
+  /// Atualiza dados de perfil do usuário logado
+  static Future<void> updateProfile({
+    String? email,
+    String? cpf,
+    String? company,
+  }) async {
+    if (SupabaseConfig.useSupabaseAuth) {
+      await _supaUpdateProfile(cpf: cpf, company: company);
+    } else {
+      await _mockUpdateProfile(email: email, cpf: cpf, company: company);
+    }
+  }
+
+  // ═══════════════════════════════════════════════
+  // LOGOUT
+  // ═══════════════════════════════════════════════
+
+  /// Encerra sessão
+  static Future<void> logout() async {
+    if (SupabaseConfig.useSupabaseAuth) {
+      try {
+        await _supa.auth.signOut();
+      } catch (e) {
+        debugPrint('[AUTH] Logout erro: $e');
+      }
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyUserId);
+    await prefs.remove(_keyUser);
+    await prefs.remove(_keyEmail);
+    await prefs.remove(_keyCpf);
+    await prefs.remove(_keyCompany);
+    await prefs.remove(_keyRole);
+    notifier.value = AuthState.unauthenticated();
+  }
+
+  // ═══════════════════════════════════════════════
+  // PASSWORD RESET (Supabase only)
+  // ═══════════════════════════════════════════════
+
+  /// Enviar email de redefinição de senha
+  static Future<bool> sendPasswordReset(String email) async {
+    if (!SupabaseConfig.useSupabaseAuth) return true; // mock: always success
+    try {
+      await _supa.auth.resetPasswordForEmail(email.trim());
+      return true;
+    } catch (e) {
+      debugPrint('[AUTH] Reset password erro: $e');
+      return false;
+    }
+  }
+
+  /// Alterar senha (requer sessão ativa)
+  static Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    if (!SupabaseConfig.useSupabaseAuth) return true; // mock: always success
+    try {
+      await _supa.auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
+      return true;
+    } catch (e) {
+      debugPrint('[AUTH] Change password erro: $e');
+      return false;
+    }
+  }
+
+  // ═══════════════════════════════════════════════
+  // ═══ SUPABASE IMPLEMENTATION ═══════════════════
+  // ═══════════════════════════════════════════════
+
+  static Future<void> _supaRestoreSession() async {
+    try {
+      final session = _supa.auth.currentSession;
+      final user = _supa.auth.currentUser;
+
+      if (session != null && user != null) {
+        final profile = await _supa
+            .from('profiles')
+            .select()
+            .eq('id', user.id)
+            .maybeSingle();
+
+        notifier.value = AuthState.authenticated(
+          userId: user.id,
+          username: profile?['name'] as String? ?? user.email ?? '',
+          email: user.email,
+          cpf: profile?['cpf'] as String?,
+          company: profile?['company'] as String?,
+          role: profile?['role'] as String? ?? 'student',
+        );
+        debugPrint('[AUTH] Sessão Supabase restaurada: ${user.email}');
+      }
+    } catch (e) {
+      debugPrint('[AUTH] Restore session erro: $e');
+    }
+  }
+
+  static Future<bool> _supaLogin(String email, String password) async {
+    try {
+      final response = await _supa.auth.signInWithPassword(
+        email: email.trim(),
+        password: password,
+      );
+
+      if (response.user == null) return false;
+
+      final profile = await _supa
+          .from('profiles')
+          .select()
+          .eq('id', response.user!.id)
+          .maybeSingle();
+
+      notifier.value = AuthState.authenticated(
+        userId: response.user!.id,
+        username: profile?['name'] as String? ?? response.user!.email ?? '',
+        email: response.user!.email,
+        cpf: profile?['cpf'] as String?,
+        company: profile?['company'] as String?,
+        role: profile?['role'] as String? ?? 'student',
+      );
+
+      debugPrint('[AUTH] Login Supabase OK: ${response.user!.email}');
+      return true;
+    } catch (e) {
+      debugPrint('[AUTH] Login Supabase erro: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> _supaRegister({
+    required String name,
+    required String email,
+    required String password,
+    String? cpf,
+    String? company,
+  }) async {
+    try {
+      final response = await _supa.auth.signUp(
+        email: email.trim(),
+        password: password,
+        data: {
+          'name': name,
+          'cpf': cpf,
+          'company': company,
+        },
+      );
+
+      if (response.user == null) return false;
+
+      // Se email não precisa de confirmação, fazer login direto
+      if (response.user!.emailConfirmedAt != null || response.session != null) {
+        notifier.value = AuthState.authenticated(
+          userId: response.user!.id,
+          username: name,
+          email: email,
+          cpf: cpf,
+          company: company,
+        );
+      }
+
+      debugPrint('[AUTH] Register Supabase OK: $email');
+      return true;
+    } catch (e) {
+      debugPrint('[AUTH] Register Supabase erro: $e');
+      return false;
+    }
+  }
+
+  static Future<void> _supaUpdateProfile({
+    String? cpf,
+    String? company,
+  }) async {
+    final state = notifier.value;
+    if (!state.loggedIn || state.userId == null) return;
+
+    try {
+      final updates = <String, dynamic>{
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      if (cpf != null) updates['cpf'] = cpf;
+      if (company != null) updates['company'] = company;
+
+      await _supa
+          .from('profiles')
+          .update(updates)
+          .eq('id', state.userId!);
+
+      notifier.value = AuthState.authenticated(
+        userId: state.userId!,
+        username: state.username ?? '',
+        email: state.email,
+        cpf: cpf ?? state.cpf,
+        company: company ?? state.company,
+        role: state.role,
+      );
+    } catch (e) {
+      debugPrint('[AUTH] Update profile erro: $e');
+    }
+  }
+
+  // ═══════════════════════════════════════════════
+  // ═══ MOCK IMPLEMENTATION ═══════════════════════
+  // ═══════════════════════════════════════════════
+
+  static Future<void> _mockRestoreSession() async {
     final prefs = await SharedPreferences.getInstance();
     final username = prefs.getString(_keyUser);
     if (username != null) {
@@ -84,19 +367,17 @@ class AuthService {
     }
   }
 
-  /// Login com credenciais mock
-  static Future<bool> login(String username, String password) async {
+  static Future<bool> _mockLogin(String username, String password) async {
     final prefs = await SharedPreferences.getInstance();
     final stored = prefs.getString('user_${username}_pass');
     if (stored != null && stored == password) {
-      await _persistSession(prefs, username);
+      await _mockPersistSession(prefs, username);
       return true;
     }
     return false;
   }
 
-  /// Registro de nova conta mock
-  static Future<bool> register({
+  static Future<bool> _mockRegister({
     required String username,
     required String password,
     String? email,
@@ -114,12 +395,11 @@ class AuthService {
       await prefs.setString('user_${username}_company', company);
     }
 
-    await _persistSession(prefs, username, email: email, cpf: cpf, company: company);
+    await _mockPersistSession(prefs, username, email: email, cpf: cpf, company: company);
     return true;
   }
 
-  /// Atualiza dados de perfil do usuário logado
-  static Future<void> updateProfile({
+  static Future<void> _mockUpdateProfile({
     String? email,
     String? cpf,
     String? company,
@@ -153,20 +433,8 @@ class AuthService {
     );
   }
 
-  /// Encerra sessão
-  static Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_keyUserId);
-    await prefs.remove(_keyUser);
-    await prefs.remove(_keyEmail);
-    await prefs.remove(_keyCpf);
-    await prefs.remove(_keyCompany);
-    await prefs.remove(_keyRole);
-    notifier.value = AuthState.unauthenticated();
-  }
-
-  /// Persiste sessão no SharedPreferences
-  static Future<void> _persistSession(
+  /// Persiste sessão no SharedPreferences (mock only)
+  static Future<void> _mockPersistSession(
     SharedPreferences prefs,
     String username, {
     String? email,
