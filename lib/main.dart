@@ -15,6 +15,9 @@ import 'screens/certificate_screen.dart';
 import 'screens/certificate_validation_screen.dart';
 import 'screens/student/quiz_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/auth/verify_email_screen.dart';
+import 'screens/auth/forgot_password_screen.dart';
+import 'screens/auth/reset_password_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -81,6 +84,24 @@ class _CrpAppState extends State<CrpApp> {
         GoRoute(
           path: '/register',
           builder: (context, state) => const RegisterScreen(),
+        ),
+        GoRoute(
+          path: '/auth/verify-email',
+          builder: (context, state) {
+            final email = state.uri.queryParameters['email'];
+            return VerifyEmailScreen(email: email);
+          },
+        ),
+        GoRoute(
+          path: '/auth/forgot-password',
+          builder: (context, state) => const ForgotPasswordScreen(),
+        ),
+        GoRoute(
+          path: '/auth/reset-password',
+          builder: (context, state) {
+            final token = state.uri.queryParameters['token'] ?? '';
+            return ResetPasswordScreen(token: token);
+          },
         ),
         GoRoute(
           path: '/course/:courseId',

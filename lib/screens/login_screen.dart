@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../core/theme/app_theme.dart';
 import '../providers/auth_service.dart';
+import '../widgets/auth/auth_text_field.dart';
+import '../widgets/auth/auth_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,7 +18,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passCtrl = TextEditingController();
   String? _error;
   bool _loading = false;
-  bool _obscurePass = true;
 
   @override
   void dispose() {
@@ -39,7 +40,6 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _loading = false);
 
     if (ok) {
-      // Redirecionar para destino original ou home
       final redirect =
           GoRouterState.of(context).uri.queryParameters['redirect'];
       if (redirect != null) {
@@ -59,176 +59,150 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 40),
-              // Logo
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: AppColors.brandGradient,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text('CRP',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold)),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Center(
-                child: Text('Bem-vindo de volta!',
-                    style: TextStyle(
-                        fontSize: 24, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 6),
-              Center(
-                child: Text('Entre na sua conta para continuar',
-                    style: TextStyle(
-                        fontSize: 14,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600])),
-              ),
-              const SizedBox(height: 36),
-
-              // Form
-              Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _userCtrl,
-                      textInputAction: TextInputAction.next,
-                      decoration: InputDecoration(
-                        labelText: 'Usuário',
-                        prefixIcon: const Icon(Icons.person_outline, size: 20),
-                        filled: true,
-                        fillColor:
-                            isDark ? AppColors.darkCard : Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(
-                              color: AppColors.primary, width: 1.5),
-                        ),
-                      ),
-                      validator: (v) => (v == null || v.isEmpty)
-                          ? 'Informe seu usuário'
-                          : null,
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: _passCtrl,
-                      obscureText: _obscurePass,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _submit(),
-                      decoration: InputDecoration(
-                        labelText: 'Senha',
-                        prefixIcon: const Icon(Icons.lock_outline, size: 20),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePass
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            size: 20,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  // Logo
+                  Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        'assets/images/crp_logo.png',
+                        height: 80,
+                        errorBuilder: (_, __, ___) => Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: AppColors.brandGradient,
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          onPressed: () =>
-                              setState(() => _obscurePass = !_obscurePass),
+                          child: const Text('CRP',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold)),
                         ),
-                        filled: true,
-                        fillColor:
-                            isDark ? AppColors.darkCard : Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(
-                              color: AppColors.primary, width: 1.5),
-                        ),
-                      ),
-                      validator: (v) => (v == null || v.isEmpty)
-                          ? 'Informe sua senha'
-                          : null,
-                    ),
-                    const SizedBox(height: 8),
-                    if (_error != null)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.error.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline,
-                                size: 18, color: AppColors.error),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(_error!,
-                                  style: const TextStyle(
-                                      fontSize: 13, color: AppColors.error)),
-                            ),
-                          ],
-                        ),
-                      ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _loading ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                        ),
-                        child: _loading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white),
-                              )
-                            : const Text('Entrar',
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600)),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              // Registrar
-              Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Não tem conta?',
+                  ),
+                  const SizedBox(height: 24),
+                  const Center(
+                    child: Text('Bem-vindo de volta!',
+                        style: TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(height: 6),
+                  Center(
+                    child: Text('Entre na sua conta para continuar',
                         style: TextStyle(
                             fontSize: 14,
-                            color: isDark
-                                ? Colors.grey[400]
-                                : Colors.grey[600])),
-                    TextButton(
-                      onPressed: () => context.go('/register'),
-                      child: const Text('Criar conta',
-                          style: TextStyle(fontWeight: FontWeight.w600)),
+                            color:
+                                isDark ? Colors.grey[400] : Colors.grey[600])),
+                  ),
+                  const SizedBox(height: 36),
+
+                  // Form
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        AuthTextField(
+                          controller: _userCtrl,
+                          label: 'Usuário ou Email',
+                          type: AuthFieldType.text,
+                          validator: (v) => (v == null || v.isEmpty)
+                              ? 'Informe seu usuário'
+                              : null,
+                        ),
+                        const SizedBox(height: 14),
+                        AuthTextField(
+                          controller: _passCtrl,
+                          label: 'Senha',
+                          type: AuthFieldType.password,
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => _submit(),
+                          validator: (v) => (v == null || v.isEmpty)
+                              ? 'Informe sua senha'
+                              : null,
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Esqueci senha
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => context.push('/auth/forgot-password'),
+                            child: Text('Esqueci minha senha',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : AppColors.primary)),
+                          ),
+                        ),
+
+                        // Erro
+                        if (_error != null)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.error_outline,
+                                    size: 18, color: AppColors.error),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(_error!,
+                                      style: const TextStyle(
+                                          fontSize: 13,
+                                          color: AppColors.error)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: 8),
+                        AuthButton(
+                          label: 'Entrar',
+                          isLoading: _loading,
+                          onPressed: _submit,
+                          icon: Icons.login,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Registrar
+                  Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Não tem conta?',
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600])),
+                        TextButton(
+                          onPressed: () => context.go('/register'),
+                          child: const Text('Criar conta',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
