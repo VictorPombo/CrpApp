@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'core/config/supabase_config.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_service.dart';
 import 'providers/auth_service.dart';
@@ -16,6 +18,18 @@ import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar Supabase (não bloqueia se offline)
+  try {
+    await Supabase.initialize(
+      url: SupabaseConfig.url,
+      anonKey: SupabaseConfig.anonKey,
+    );
+    debugPrint('[SUPABASE] Inicializado com sucesso');
+  } catch (e) {
+    debugPrint('[SUPABASE] Erro na inicialização (modo offline): $e');
+  }
+
   await LocalStorageService.init();
   await LocalStorageService.clearAll(); // Reset para demo
   await LocalStorageService.seedDemoData(); // Popular dados de teste
