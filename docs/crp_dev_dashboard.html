@@ -940,6 +940,12 @@ const TASKS = [
         desc:"Layout Stack único para mobile e desktop. Logo absolutamente centralizado via Center. Título 'Catálogo de Cursos' via Positioned(left) só aparece em telas >500px. Ícones busca/tema via Positioned(right). Elimina desalinhamento visual entre título e logo de vez.", files:["lib/screens/home_screen.dart"], prompt:"" },
       { id:93, status:"done", priority:"done", title:"FIX: Filtros MyCoursesScreen — scroll horizontal em mobile",
         desc:"Wrap trocado por SingleChildScrollView(horizontal)+Row para os ChoiceChips de filtro (Todos/Em andamento/Concluídos/Não iniciados). Em mobile os chips ficam em uma linha deslizável ao invés de quebrar em duas linhas.", files:["lib/screens/my_courses_screen.dart"], prompt:"" },
+      { id:94, status:"done", priority:"done", title:"FEATURE: Integração Supabase — Bloco A completo",
+        desc:"supabase_flutter v2.12.0 instalado. SupabaseConfig com URL+anon key. UserModel completo (fromJson/toJson/copyWith). AuthServiceBase abstrato. MockAuthService (compat. fluxo existente). SupabaseAuthService esqueleto. Supabase.initialize() no main.dart com try-catch.", files:["lib/core/config/supabase_config.dart","lib/models/user_model.dart","lib/services/auth_service_base.dart","lib/services/mock_auth_service.dart","lib/services/supabase_auth_service.dart","lib/main.dart"], prompt:"" },
+      { id:95, status:"done", priority:"done", title:"FEATURE: Widgets auth reutilizáveis",
+        desc:"AuthTextField (6 tipos: email/password/name/cpf/phone/text com máscaras automáticas). AuthButton (loading state, outlined variant, ícone). PasswordStrengthIndicator (4 níveis visuais: Fraca/Razoável/Boa/Forte).", files:["lib/widgets/auth/auth_text_field.dart","lib/widgets/auth/auth_button.dart","lib/widgets/auth/password_strength.dart"], prompt:"" },
+      { id:96, status:"done", priority:"done", title:"FEATURE: Bloco B — Telas auth refatoradas + novas",
+        desc:"LoginScreen refatorada com AuthTextField/AuthButton e link 'Esqueci senha'. RegisterScreen com CPF/Phone mascarados, PasswordStrength e checkbox termos. 3 telas novas: VerifyEmailScreen (OTP 6 dígitos), ForgotPasswordScreen, ResetPasswordScreen. Rotas /auth/* no GoRouter.", files:["lib/screens/login_screen.dart","lib/screens/register_screen.dart","lib/screens/auth/verify_email_screen.dart","lib/screens/auth/forgot_password_screen.dart","lib/screens/auth/reset_password_screen.dart","lib/main.dart"], prompt:"" },
     ]
   }
 ];
