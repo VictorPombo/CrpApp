@@ -48,6 +48,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         title: const Text('Esqueci minha senha'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/login'),
+        ),
       ),
       body: Center(
         child: SingleChildScrollView(

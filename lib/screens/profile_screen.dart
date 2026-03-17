@@ -195,9 +195,13 @@ class ProfileScreen extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Image.asset(
-              isDark ? 'assets/images/crp_logo_dark.png' : 'assets/images/crp_logo.png',
-              height: 32,
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.secondary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.info_outline, color: AppColors.secondary, size: 24),
             ),
             const SizedBox(width: 10),
             const Expanded(

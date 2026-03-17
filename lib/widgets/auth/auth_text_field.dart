@@ -42,6 +42,8 @@ class _AuthTextFieldState extends State<AuthTextField> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final focusColor = isDark ? AppColors.secondaryLight : AppColors.primary;
+
     return TextFormField(
       controller: widget.controller,
       focusNode: widget.focusNode,
@@ -51,6 +53,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
       textInputAction: widget.textInputAction,
       onFieldSubmitted: widget.onSubmitted,
       inputFormatters: _formatters,
+      cursorColor: focusColor,
       style: TextStyle(
         color: isDark ? Colors.white : AppColors.textBody,
         fontSize: 15,
@@ -58,6 +61,17 @@ class _AuthTextFieldState extends State<AuthTextField> {
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,
+        // Cor do label quando o campo NÃO está focado
+        labelStyle: TextStyle(
+          color: isDark ? Colors.grey[400] : Colors.grey[600],
+          fontSize: 15,
+        ),
+        // Cor do label quando o campo ESTÁ focado (flutuante)
+        floatingLabelStyle: TextStyle(
+          color: focusColor,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
         prefixIcon: Icon(_prefixIcon, size: 20),
         suffixIcon: widget.type == AuthFieldType.password
             ? IconButton(
@@ -80,11 +94,15 @@ class _AuthTextFieldState extends State<AuthTextField> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.primary, width: 2),
+          borderSide: BorderSide(color: focusColor, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.red),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
         ),
         filled: true,
         fillColor: isDark ? AppColors.darkCard : Colors.grey[50],

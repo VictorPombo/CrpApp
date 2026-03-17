@@ -89,6 +89,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
         title: const Text('Verificar Email'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/login'),
+        ),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -97,15 +101,15 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
             constraints: const BoxConstraints(maxWidth: 400),
             child: Column(
               children: [
-                // Ícone
+                // Ícone — usa secondary (laranja) visível em dark mode
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: AppColors.secondary.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.mark_email_read_outlined,
-                      size: 48, color: AppColors.primary),
+                      size: 48, color: AppColors.secondary),
                 ),
                 const SizedBox(height: 24),
                 const Text('Verifique seu email',
@@ -133,6 +137,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                         textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
                         maxLength: 1,
+                        cursorColor: isDark ? AppColors.secondaryLight : AppColors.primary,
                         style: const TextStyle(
                             fontSize: 22, fontWeight: FontWeight.bold),
                         decoration: InputDecoration(
@@ -140,10 +145,16 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+                            ),
+                          ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                                color: AppColors.primary, width: 2),
+                            borderSide: BorderSide(
+                                color: isDark ? AppColors.secondaryLight : AppColors.primary, width: 2),
                           ),
                           filled: true,
                           fillColor:

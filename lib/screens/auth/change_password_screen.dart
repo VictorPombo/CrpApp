@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -128,10 +129,26 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   '• Mínimo 6 caracteres\n• Use letras, números e símbolos',
                   style: TextStyle(
                       fontSize: 12,
-                      color: isDark ? Colors.grey[500] : Colors.grey[500]),
+                      color: isDark ? Colors.grey[400] : Colors.grey[500]),
                 ),
               ),
-              const SizedBox(height: 20),
+
+              // Opção de redefinir por email
+              Center(
+                child: TextButton.icon(
+                  onPressed: () => context.push('/auth/forgot-password'),
+                  icon: Icon(Icons.email_outlined, size: 16,
+                      color: isDark ? AppColors.secondaryLight : AppColors.primary),
+                  label: Text(
+                    'Esqueci minha senha — redefinir por e-mail',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? AppColors.secondaryLight : AppColors.primary,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
 
               // Botão
               SizedBox(
@@ -181,6 +198,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           controller: controller,
           obscureText: !showPassword,
           validator: validator,
+          cursorColor: isDark ? AppColors.secondaryLight : AppColors.primary,
           decoration: InputDecoration(
             prefixIcon: const Icon(Icons.lock_outline, size: 20),
             suffixIcon: IconButton(
@@ -203,8 +221,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: AppColors.primary, width: 1.5),
+              borderSide: BorderSide(
+                  color: isDark ? AppColors.secondaryLight : AppColors.primary,
+                  width: 1.5),
             ),
           ),
         ),

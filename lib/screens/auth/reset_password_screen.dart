@@ -58,6 +58,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         title: const Text('Nova senha'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/login'),
+        ),
       ),
       body: Center(
         child: SingleChildScrollView(

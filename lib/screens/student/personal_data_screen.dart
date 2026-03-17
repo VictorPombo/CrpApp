@@ -68,6 +68,11 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
                 setState(() => _isEditing = true);
               }
             },
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.secondaryLight
+                  : AppColors.primary,
+            ),
             icon: Icon(_isEditing ? Icons.check : Icons.edit, size: 18),
             label: Text(_isEditing ? 'Salvar' : 'Editar'),
           ),
@@ -103,6 +108,11 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
                 Center(
                   child: TextButton.icon(
                     onPressed: () {},
+                    style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.secondaryLight
+                          : AppColors.primary,
+                    ),
                     icon: const Icon(Icons.camera_alt_outlined, size: 16),
                     label: const Text('Alterar foto'),
                   ),
@@ -149,6 +159,7 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
             enabled: _isEditing && enabled,
             keyboardType: keyboardType,
             inputFormatters: inputFormatters,
+            cursorColor: isDark ? AppColors.secondaryLight : AppColors.primary,
             decoration: InputDecoration(
               prefixIcon: Icon(icon, size: 20,
                   color: isDark ? AppColors.secondary : null),
@@ -166,7 +177,9 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                borderSide: BorderSide(
+                    color: isDark ? AppColors.secondaryLight : AppColors.primary,
+                    width: 1.5),
               ),
               disabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
