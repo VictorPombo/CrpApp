@@ -288,7 +288,8 @@ class _PaymentScreenState extends State<PaymentScreen>
             ),
             child: Column(
               children: [
-                const Icon(Icons.receipt_long, size: 48, color: AppColors.primary),
+                Icon(Icons.receipt_long, size: 48,
+                    color: isDark ? AppColors.secondary : AppColors.primary),
                 const SizedBox(height: 12),
                 const Text('Boleto bancário',
                     style:

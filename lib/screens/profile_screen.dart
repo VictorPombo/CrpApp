@@ -191,26 +191,76 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: isDark ? AppColors.darkSurface : null,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('CRP Engenharia'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            Text(
-              'A CRP Engenharia é especialista em segurança do trabalho e medicina ocupacional, '
-              'oferecendo cursos e treinamentos certificados para profissionais da indústria.',
-              style: TextStyle(fontSize: 14, height: 1.6),
+            Image.asset(
+              isDark ? 'assets/images/crp_logo_dark.png' : 'assets/images/crp_logo.png',
+              height: 32,
             ),
-            SizedBox(height: 12),
-            Text('CNPJ: 12.345.678/0001-90', style: TextStyle(fontSize: 13)),
-            SizedBox(height: 4),
-            Text('Fundada em 2015', style: TextStyle(fontSize: 13)),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text('CRP Engenharia', style: TextStyle(fontSize: 18)),
+            ),
           ],
+        ),
+        content: const SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Fundada em 2014, a CRP Engenharia e Medicina do Trabalho é '
+                'especializada em soluções de saúde e segurança ocupacional, '
+                'atuando com excelência técnica junto a empresas de todos os portes.',
+                style: TextStyle(fontSize: 14, height: 1.6),
+              ),
+              SizedBox(height: 16),
+              Text('Missão', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              SizedBox(height: 4),
+              Text(
+                'Atender clientes, colaboradores e fornecedores com excelência em '
+                'saúde, segurança e qualidade de vida no trabalho, garantindo '
+                'conformidade legal.',
+                style: TextStyle(fontSize: 13, height: 1.5),
+              ),
+              SizedBox(height: 12),
+              Text('Visão', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              SizedBox(height: 4),
+              Text(
+                'Ser referência no cumprimento das Normas Regulamentadoras (NRs) '
+                'e prevenção de riscos, buscando excelência técnica e satisfação total.',
+                style: TextStyle(fontSize: 13, height: 1.5),
+              ),
+              SizedBox(height: 12),
+              Text('Valores', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              SizedBox(height: 4),
+              Text(
+                '• Ética\n• Transparência\n• Responsabilidade\n• Competência',
+                style: TextStyle(fontSize: 13, height: 1.5),
+              ),
+              SizedBox(height: 12),
+              Text('Serviços', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              SizedBox(height: 4),
+              Text(
+                '• Perícias Trabalhistas\n'
+                '• Medicina e Saúde Ocupacional\n'
+                '• Engenharia de Segurança\n'
+                '• Gestão de eSocial\n'
+                '• Licenciamentos (AVCB/CLCB)\n'
+                '• Cursos e Treinamentos NR',
+                style: TextStyle(fontSize: 13, height: 1.5),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: isDark ? AppColors.secondary : AppColors.primary,
+            ),
             child: const Text('Fechar'),
           ),
         ],
@@ -219,39 +269,88 @@ class ProfileScreen extends StatelessWidget {
   }
 
   void _showSupportDialog(BuildContext context, bool isDark) {
+    final iconColor = isDark ? AppColors.secondary : AppColors.primary;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: isDark ? AppColors.darkSurface : null,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Ajuda e suporte'),
-        content: const Column(
+        title: const Text('Ajuda e Suporte'),
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Em caso de dúvidas ou problemas:', style: TextStyle(fontSize: 14)),
-            SizedBox(height: 12),
+            const Text(
+              'Estamos prontos para ajudar! Entre em contato:',
+              style: TextStyle(fontSize: 14, height: 1.5),
+            ),
+            const SizedBox(height: 16),
             Row(children: [
-              Icon(Icons.email_outlined, size: 18, color: AppColors.primary),
-              SizedBox(width: 8),
-              Text('suporte@crpengenharia.com.br', style: TextStyle(fontSize: 13)),
+              Icon(Icons.phone_outlined, size: 18, color: iconColor),
+              const SizedBox(width: 8),
+              const Text('(11) 2347-0240', style: TextStyle(fontSize: 14)),
             ]),
-            SizedBox(height: 8),
+            const SizedBox(height: 10),
             Row(children: [
-              Icon(Icons.phone_outlined, size: 18, color: AppColors.primary),
-              SizedBox(width: 8),
-              Text('(11) 3456-7890', style: TextStyle(fontSize: 13)),
+              const Icon(Icons.message_outlined, size: 18, color: Color(0xFF25D366)),
+              const SizedBox(width: 8),
+              const Text('(11) 93412-7048', style: TextStyle(fontSize: 14)),
+              const SizedBox(width: 4),
+              const Text('(WhatsApp)', style: TextStyle(fontSize: 12, color: Colors.grey)),
             ]),
-            SizedBox(height: 8),
+            const SizedBox(height: 10),
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.email_outlined, size: 18, color: iconColor),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text('crpengenharia@crpengenharia.com',
+                    style: TextStyle(fontSize: 14)),
+              ),
+            ]),
+            const SizedBox(height: 10),
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.location_on_outlined, size: 18, color: iconColor),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Rua Virgílio, 120 - Vila Prudente\nSão Paulo - SP, CEP: 03138-050',
+                  style: TextStyle(fontSize: 13, height: 1.4),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 10),
             Row(children: [
-              Icon(Icons.access_time, size: 18, color: AppColors.primary),
-              SizedBox(width: 8),
-              Text('Seg-Sex, 8h às 18h', style: TextStyle(fontSize: 13)),
+              Icon(Icons.access_time, size: 18, color: iconColor),
+              const SizedBox(width: 8),
+              const Text('Seg - Sex, 8h às 18h', style: TextStyle(fontSize: 14)),
+            ]),
+            const SizedBox(height: 10),
+            Row(children: [
+              Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(5),
+                  gradient: const LinearGradient(
+                    begin: Alignment.bottomLeft,
+                    end: Alignment.topRight,
+                    colors: [Color(0xFFFD1D1D), Color(0xFFE1306C), Color(0xFFC13584), Color(0xFF833AB4)],
+                  ),
+                ),
+                child: const Icon(Icons.camera_alt, size: 12, color: Colors.white),
+              ),
+              const SizedBox(width: 8),
+              const Text('@crpengenhariaemedicina',
+                  style: TextStyle(fontSize: 13)),
             ]),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: isDark ? AppColors.secondary : AppColors.primary,
+            ),
             child: const Text('Fechar'),
           ),
         ],
@@ -263,28 +362,67 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: isDark ? AppColors.darkSurface : null,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Termos de uso'),
+        title: const Text('Termos de Uso'),
         content: const SizedBox(
-          height: 300,
+          height: 400,
+          width: double.maxFinite,
           child: SingleChildScrollView(
             child: Text(
-              'TERMOS DE USO — CRP CURSOS\n\n'
+              'TERMOS DE USO — CURSOS CRP ENGENHARIA\n'
+              'Última atualização: Março de 2026\n\n'
               '1. ACEITAÇÃO DOS TERMOS\n'
-              'Ao utilizar o aplicativo CRP Cursos, você concorda com estes termos de uso.\n\n'
-              '2. USO DO SERVIÇO\n'
-              'O conteúdo dos cursos é para uso pessoal e intransferível. '
-              'É proibida a reprodução, distribuição ou compartilhamento do material.\n\n'
-              '3. PAGAMENTOS\n'
-              'Os pagamentos são processados pelo Mercado Pago. '
-              'Política de reembolso: até 7 dias após a compra.\n\n'
-              '4. CERTIFICADOS\n'
-              'Os certificados são emitidos após a conclusão de 100% do conteúdo. '
-              'Possuem validade de 2 anos conforme normas regulamentadoras.\n\n'
-              '5. PRIVACIDADE\n'
-              'Seus dados são protegidos conforme a LGPD (Lei 13.709/2018).\n\n'
-              '6. CONTATO\n'
-              'suporte@crpengenharia.com.br',
+              'Ao utilizar o aplicativo "Cursos CRP Engenharia", desenvolvido pela '
+              'CRP Engenharia e Medicina do Trabalho Ltda., o usuário declara que '
+              'leu, compreendeu e aceita integralmente os presentes Termos de Uso.\n\n'
+              '2. PROPRIEDADE INTELECTUAL\n'
+              'Todo o conteúdo disponibilizado neste aplicativo — incluindo, mas não '
+              'se limitando a textos, vídeos, imagens, logotipos, materiais didáticos '
+              'e certificados — é protegido por direitos autorais nos termos da Lei '
+              'nº 9.610/98 e pertence exclusivamente à CRP Engenharia.\n\n'
+              '3. LICENÇA DE USO\n'
+              'O acesso e uso do conteúdo dos cursos é pessoal e intransferível. '
+              'É expressamente vedada a reprodução, distribuição, modificação ou '
+              'compartilhamento total ou parcial do material, sob pena de sanções '
+              'civis e penais previstas em lei.\n\n'
+              '4. CADASTRO E DADOS\n'
+              'O usuário é responsável pela veracidade das informações fornecidas '
+              'no cadastro. Dados falsos ou inexatos podem resultar na suspensão '
+              'do acesso e invalidação de certificados emitidos.\n\n'
+              '5. CERTIFICADOS\n'
+              'Os certificados digitais são emitidos após a conclusão de 100% do '
+              'conteúdo programático e aprovação na avaliação (nota mínima de 70%). '
+              'Possuem validade de 2 anos conforme as Normas Regulamentadoras '
+              'aplicáveis. A CRP Engenharia garante a autenticidade dos certificados '
+              'por meio de código de verificação digital com hash SHA-256.\n\n'
+              '6. PAGAMENTOS E REEMBOLSO\n'
+              'Os pagamentos são processados por meio de plataforma de pagamento '
+              'integrada. O usuário poderá solicitar reembolso integral em até 7 '
+              '(sete) dias corridos após a compra, conforme o Código de Defesa do '
+              'Consumidor (Lei nº 8.078/90).\n\n'
+              '7. RESPONSABILIDADE\n'
+              'A CRP Engenharia garante a qualidade técnica e a conformidade dos '
+              'conteúdos com as Normas Regulamentadoras vigentes. O usuário é '
+              'responsável pela correta aplicação prática dos conhecimentos '
+              'adquiridos em seus respectivos ambientes de trabalho.\n\n'
+              '8. PRIVACIDADE E PROTEÇÃO DE DADOS\n'
+              'Os dados pessoais dos usuários são tratados em conformidade com a '
+              'Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD). Os '
+              'dados são utilizados exclusivamente para gestão acadêmica, emissão '
+              'de certificados e comunicações relacionadas aos cursos. O usuário '
+              'poderá solicitar a exclusão de seus dados a qualquer momento.\n\n'
+              '9. DISPONIBILIDADE\n'
+              'A CRP Engenharia envidará seus melhores esforços para manter o '
+              'aplicativo disponível e funcional. Eventuais interrupções para '
+              'manutenção serão comunicadas previamente.\n\n'
+              '10. FORO\n'
+              'Fica eleito o foro da comarca de São Paulo — SP para dirimir '
+              'quaisquer controvérsias decorrentes destes Termos de Uso.\n\n'
+              'CRP Engenharia e Medicina do Trabalho Ltda.\n'
+              'Rua Virgílio, 120 — Vila Prudente, São Paulo — SP\n'
+              'crpengenharia@crpengenharia.com\n'
+              '(11) 2347-0240',
               style: TextStyle(fontSize: 13, height: 1.6),
             ),
           ),
@@ -292,6 +430,9 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: isDark ? AppColors.secondary : AppColors.primary,
+            ),
             child: const Text('Fechar'),
           ),
         ],
@@ -345,13 +486,16 @@ class _MenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ListTile(
-      leading: Icon(icon, color: AppColors.primary),
+      leading: Icon(icon,
+          color: isDark ? AppColors.secondary : AppColors.primary),
       title: Text(title, style: const TextStyle(fontSize: 15)),
       subtitle:
           subtitle != null ? Text(subtitle!, style: const TextStyle(fontSize: 12)) : null,
       trailing:
-          trailing ?? const Icon(Icons.chevron_right, color: Colors.grey),
+          trailing ?? Icon(Icons.chevron_right,
+              color: isDark ? Colors.grey[400] : Colors.grey),
       onTap: onTap,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     );

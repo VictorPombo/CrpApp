@@ -757,7 +757,8 @@ class _ActionButton extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(icon, size: 24, color: AppColors.primary),
+            Icon(icon, size: 24,
+                color: isDark ? AppColors.secondary : AppColors.primary),
             const SizedBox(height: 6),
             Text(label,
                 style: TextStyle(

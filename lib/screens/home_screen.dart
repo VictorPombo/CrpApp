@@ -105,68 +105,62 @@ class _CatalogPageState extends State<_CatalogPage> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Row(
+              child: Column(
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          height: 50,
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.white : Colors.transparent,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Image.asset(
-                            'assets/images/crp_logo.png',
-                            height: 42,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
                           'Catálogo de Cursos',
-                          style: Theme.of(context).textTheme.headlineMedium,
+                          style: Theme.of(context).textTheme.titleLarge,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ],
-                    ),
+                      ),
+                      ValueListenableBuilder<ThemeMode>(
+                        valueListenable: ThemeService.notifier,
+                        builder: (context, mode, _) {
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                tooltip: 'Buscar cursos',
+                                icon: const Icon(Icons.search),
+                                onPressed: () async {
+                                  final courses = _allCourses;
+                                  if (!mounted) return;
+                                  await showSearch(
+                                    context: context,
+                                    delegate: _CourseSearchDelegate(courses),
+                                  );
+                                },
+                              ),
+                              IconButton(
+                                tooltip: ThemeService.isDark
+                                    ? 'Modo claro'
+                                    : 'Modo escuro',
+                                icon: Icon(
+                                  ThemeService.isDark
+                                      ? Icons.wb_sunny
+                                      : Icons.nightlight_round,
+                                  color: ThemeService.isDark
+                                      ? AppColors.secondary
+                                      : Colors.black87,
+                                ),
+                                onPressed: () => ThemeService.toggle(),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  // Busca
-                  ValueListenableBuilder<ThemeMode>(
-                    valueListenable: ThemeService.notifier,
-                    builder: (context, mode, _) {
-                      return Row(
-                        children: [
-                          IconButton(
-                            tooltip: 'Buscar cursos',
-                            icon: const Icon(Icons.search),
-                            onPressed: () async {
-                              final courses = _allCourses;
-                              if (!mounted) return;
-                              await showSearch(
-                                context: context,
-                                delegate: _CourseSearchDelegate(courses),
-                              );
-                            },
-                          ),
-                          IconButton(
-                            tooltip: ThemeService.isDark
-                                ? 'Modo claro'
-                                : 'Modo escuro',
-                            icon: Icon(
-                              ThemeService.isDark
-                                  ? Icons.wb_sunny
-                                  : Icons.nightlight_round,
-                              color: ThemeService.isDark
-                                  ? AppColors.secondary
-                                  : Colors.black87,
-                            ),
-                            onPressed: () => ThemeService.toggle(),
-                          ),
-                        ],
-                      );
-                    },
+                  const SizedBox(height: 4),
+                  Image.asset(
+                    isDark
+                        ? 'assets/images/crp_logo_dark.png'
+                        : 'assets/images/crp_logo.png',
+                    height: 50,
+                    fit: BoxFit.contain,
                   ),
                 ],
               ),

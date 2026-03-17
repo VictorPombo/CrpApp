@@ -49,6 +49,10 @@ class _CrpAppState extends State<CrpApp> {
       redirect: _guardRedirect,
       routes: [
         GoRoute(
+          path: '/',
+          redirect: (_, __) => '/splash',
+        ),
+        GoRoute(
           path: '/splash',
           builder: (context, state) => const SplashScreen(),
         ),

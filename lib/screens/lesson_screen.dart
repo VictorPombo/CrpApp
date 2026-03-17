@@ -251,285 +251,330 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
           _onTimerTick = () => setFS(() {});
           return Scaffold(
             backgroundColor: Colors.black,
-            body: Row(
-              children: [
-                // ── Área do player (expande ou divide com anotações) ──
-                Expanded(
-                  child: GestureDetector(
-                    onDoubleTap: () => Navigator.pop(ctx),
-                    child: Stack(
-                      children: [
-                        // Player centralizado
-                        Center(
-                          child: AspectRatio(
-                            aspectRatio: 16 / 9,
-                            child: Container(
-                              color: const Color(0xFF1A1A2E),
-                              child: Center(
-                                child: GestureDetector(
-                                  onTap: () => setFS(
-                                      () { _togglePlay(); }),
-                                  child: Container(
-                                    width: 80,
-                                    height: 80,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white
-                                          .withValues(alpha: 0.15),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      _isPlaying
-                                          ? Icons.pause_rounded
-                                          : Icons.play_arrow_rounded,
-                                      size: 50,
-                                      color: Colors.white
-                                          .withValues(alpha: 0.9),
-                                    ),
+            body: LayoutBuilder(
+              builder: (ctx2, constraints) {
+                final isLandscape = constraints.maxWidth > constraints.maxHeight;
+
+                // ── Widget do player ──
+                Widget playerWidget = GestureDetector(
+                  onDoubleTap: () => Navigator.pop(ctx),
+                  child: Stack(
+                    children: [
+                      // Player centralizado
+                      Center(
+                        child: AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: Container(
+                            color: const Color(0xFF1A1A2E),
+                            child: Center(
+                              child: GestureDetector(
+                                onTap: () => setFS(
+                                    () { _togglePlay(); }),
+                                child: Container(
+                                  width: 80,
+                                  height: 80,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white
+                                        .withValues(alpha: 0.15),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    _isPlaying
+                                        ? Icons.pause_rounded
+                                        : Icons.play_arrow_rounded,
+                                    size: 50,
+                                    color: Colors.white
+                                        .withValues(alpha: 0.9),
                                   ),
                                 ),
                               ),
                             ),
                           ),
                         ),
+                      ),
 
-                        // ── Barra inferior com seek + controles ──
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: SafeArea(
-                            child: Container(
-                              padding: const EdgeInsets.fromLTRB(
-                                  8, 0, 8, 8),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  // Seek bar
-                                  SliderTheme(
-                                    data: const SliderThemeData(
-                                      trackHeight: 4,
-                                      thumbShape: RoundSliderThumbShape(
-                                          enabledThumbRadius: 7),
-                                      activeTrackColor:
-                                          AppColors.primary,
-                                      inactiveTrackColor:
-                                          Colors.white24,
-                                      thumbColor: AppColors.primary,
-                                      overlayShape:
-                                          RoundSliderOverlayShape(
-                                              overlayRadius: 14),
-                                    ),
-                                    child: Slider(
-                                      value: _seekPosition,
-                                      onChanged: (v) =>
-                                          setFS(() => _seekPosition = v),
-                                    ),
+                      // ── Barra inferior com seek + controles ──
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: SafeArea(
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(
+                                8, 0, 8, 8),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Seek bar
+                                SliderTheme(
+                                  data: const SliderThemeData(
+                                    trackHeight: 4,
+                                    thumbShape: RoundSliderThumbShape(
+                                        enabledThumbRadius: 7),
+                                    activeTrackColor:
+                                        AppColors.primary,
+                                    inactiveTrackColor:
+                                        Colors.white24,
+                                    thumbColor: AppColors.primary,
+                                    overlayShape:
+                                        RoundSliderOverlayShape(
+                                            overlayRadius: 14),
                                   ),
-                                  const SizedBox(height: 4),
+                                  child: Slider(
+                                    value: _seekPosition,
+                                    onChanged: (v) =>
+                                        setFS(() => _seekPosition = v),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
 
-                                  // Controles inferiores
-                                  Row(
-                                    children: [
-                                      // ── ESQUERDA: sair, -10s, +10s, velocidade, duração ──
-                                      IconButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx),
-                                        icon: const Icon(
-                                            Icons.fullscreen_exit,
-                                            color: Colors.white,
-                                            size: 24),
-                                        tooltip: 'Sair da tela cheia',
-                                        visualDensity:
-                                            VisualDensity.compact,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      IconButton(
-                                        onPressed: () => setFS(() =>
-                                            _seekPosition =
-                                                (_seekPosition - 0.05)
-                                                    .clamp(0.0, 1.0)),
-                                        icon: const Icon(
-                                            Icons.replay_10,
-                                            color: Colors.white70,
-                                            size: 22),
-                                        visualDensity:
-                                            VisualDensity.compact,
-                                      ),
-                                      IconButton(
-                                        onPressed: () => setFS(() =>
-                                            _seekPosition =
-                                                (_seekPosition + 0.05)
-                                                    .clamp(0.0, 1.0)),
-                                        icon: const Icon(
-                                            Icons.forward_10,
-                                            color: Colors.white70,
-                                            size: 22),
-                                        visualDensity:
-                                            VisualDensity.compact,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      // Velocidade
-                                      GestureDetector(
-                                        onTap: () {
-                                          setFS(() {
-                                            _speedIndex =
-                                                (_speedIndex + 1) %
-                                                    _speeds.length;
-                                          });
-                                          setState(() {});
-                                        },
-                                        child: Container(
-                                          padding:
-                                              const EdgeInsets
-                                                  .symmetric(
-                                                  horizontal: 10,
-                                                  vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white24,
-                                            borderRadius:
-                                                BorderRadius.circular(
-                                                    6),
-                                          ),
-                                          child: Text(
-                                            '${_speeds[_speedIndex]}x',
-                                            style: const TextStyle(
-                                                color: Colors.white,
-                                                fontWeight:
-                                                    FontWeight.w600,
-                                                fontSize: 13),
-                                          ),
+                                // Controles inferiores
+                                Row(
+                                  children: [
+                                    // Sair fullscreen
+                                    IconButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx),
+                                      icon: const Icon(
+                                          Icons.fullscreen_exit,
+                                          color: Colors.white,
+                                          size: 22),
+                                      tooltip: 'Sair da tela cheia',
+                                      visualDensity:
+                                          VisualDensity.compact,
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(
+                                          minWidth: 32, minHeight: 32),
+                                    ),
+                                    // -10s
+                                    IconButton(
+                                      onPressed: () => setFS(() =>
+                                          _seekPosition =
+                                              (_seekPosition - 0.05)
+                                                  .clamp(0.0, 1.0)),
+                                      icon: const Icon(
+                                          Icons.replay_10,
+                                          color: Colors.white70,
+                                          size: 20),
+                                      visualDensity:
+                                          VisualDensity.compact,
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(
+                                          minWidth: 32, minHeight: 32),
+                                    ),
+                                    // +10s
+                                    IconButton(
+                                      onPressed: () => setFS(() =>
+                                          _seekPosition =
+                                              (_seekPosition + 0.05)
+                                                  .clamp(0.0, 1.0)),
+                                      icon: const Icon(
+                                          Icons.forward_10,
+                                          color: Colors.white70,
+                                          size: 20),
+                                      visualDensity:
+                                          VisualDensity.compact,
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(
+                                          minWidth: 32, minHeight: 32),
+                                    ),
+                                    const SizedBox(width: 2),
+                                    // Velocidade
+                                    GestureDetector(
+                                      onTap: () {
+                                        setFS(() {
+                                          _speedIndex =
+                                              (_speedIndex + 1) %
+                                                  _speeds.length;
+                                        });
+                                        setState(() {});
+                                      },
+                                      child: Container(
+                                        padding:
+                                            const EdgeInsets
+                                                .symmetric(
+                                                horizontal: 6,
+                                                vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white24,
+                                          borderRadius:
+                                              BorderRadius.circular(
+                                                  6),
+                                        ),
+                                        child: Text(
+                                          '${_speeds[_speedIndex]}x',
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight:
+                                                  FontWeight.w600,
+                                              fontSize: 12),
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
-                                      // Duração
-                                      Text(
+                                    ),
+                                    const SizedBox(width: 4),
+                                    // Duração — ocupa espaço restante
+                                    Expanded(
+                                      child: Text(
                                         _timeDisplay,
                                         style: const TextStyle(
                                             color: Colors.white54,
-                                            fontSize: 12),
+                                            fontSize: 11),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-
-                                      const Spacer(),
-
-                                      // ── DIREITA: ícone caderno ──
-                                      IconButton(
-                                        onPressed: () =>
-                                            setFS(() => showNotes =
-                                                !showNotes),
-                                        icon: Icon(
-                                          showNotes
-                                              ? Icons.menu_book
-                                              : Icons
-                                                  .menu_book_outlined,
-                                          color: showNotes
-                                              ? AppColors.primary
-                                              : Colors.white70,
-                                          size: 24,
-                                        ),
-                                        tooltip: showNotes
-                                            ? 'Fechar anotações'
-                                            : 'Anotações',
-                                        visualDensity:
-                                            VisualDensity.compact,
+                                    ),
+                                    // ── DIREITA: ícone caderno ──
+                                    IconButton(
+                                      onPressed: () =>
+                                          setFS(() => showNotes =
+                                              !showNotes),
+                                      icon: Icon(
+                                        showNotes
+                                            ? Icons.menu_book
+                                            : Icons
+                                                .menu_book_outlined,
+                                        color: showNotes
+                                            ? AppColors.primary
+                                            : Colors.white70,
+                                        size: 22,
                                       ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // ── Painel lateral de anotações (direita) ──
-                if (showNotes)
-                  Container(
-                    width: MediaQuery.of(ctx).size.width * 0.30,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF1E1E2E),
-                      border: Border(
-                        left: BorderSide(
-                            color: Colors.white12, width: 1),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        // Header
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          decoration: const BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                  color: Colors.white12, width: 1),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.edit_note,
-                                  color: Colors.white70, size: 20),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Anotações',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14),
-                              ),
-                              const Spacer(),
-                              IconButton(
-                                onPressed: () =>
-                                    setFS(() => showNotes = false),
-                                icon: const Icon(Icons.close,
-                                    color: Colors.white54, size: 18),
-                                visualDensity: VisualDensity.compact,
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Campo de anotação
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: TextField(
-                              controller: _annotationController,
-                              onChanged: _onAnnotationChanged,
-                              maxLines: null,
-                              expands: true,
-                              textAlignVertical:
-                                  TextAlignVertical.top,
-                              keyboardType:
-                                  TextInputType.multiline,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  height: 1.5),
-                              decoration: InputDecoration(
-                                hintText:
-                                    'Escreva suas anotações aqui...',
-                                hintStyle: TextStyle(
-                                    color: Colors.white
-                                        .withValues(alpha: 0.3)),
-                                filled: true,
-                                fillColor: const Color(0xFF2A2A3E),
-                                border: OutlineInputBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(10),
-                                  borderSide: BorderSide.none,
+                                      tooltip: showNotes
+                                          ? 'Fechar anotações'
+                                          : 'Anotações',
+                                      visualDensity:
+                                          VisualDensity.compact,
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(
+                                          minWidth: 32, minHeight: 32),
+                                    ),
+                                  ],
                                 ),
-                                contentPadding:
-                                    const EdgeInsets.all(14),
-                              ),
+                              ],
                             ),
                           ),
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                );
+
+                // ── Widget das anotações ──
+                Widget notesWidget = Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1E2E),
+                    border: Border(
+                      left: isLandscape
+                          ? const BorderSide(color: Colors.white12, width: 1)
+                          : BorderSide.none,
+                      top: !isLandscape
+                          ? const BorderSide(color: Colors.white12, width: 1)
+                          : BorderSide.none,
                     ),
                   ),
-              ],
+                  child: Column(
+                    children: [
+                      // Header
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: const BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                                color: Colors.white12, width: 1),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.edit_note,
+                                color: Colors.white70, size: 20),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Anotações',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14),
+                            ),
+                            const Spacer(),
+                            IconButton(
+                              onPressed: () =>
+                                  setFS(() => showNotes = false),
+                              icon: const Icon(Icons.close,
+                                  color: Colors.white54, size: 18),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Campo de anotação
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: TextField(
+                            controller: _annotationController,
+                            onChanged: _onAnnotationChanged,
+                            maxLines: null,
+                            expands: true,
+                            textAlignVertical:
+                                TextAlignVertical.top,
+                            keyboardType:
+                                TextInputType.multiline,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                height: 1.5),
+                            decoration: InputDecoration(
+                              hintText:
+                                  'Escreva suas anotações aqui...',
+                              hintStyle: TextStyle(
+                                  color: Colors.white
+                                      .withValues(alpha: 0.3)),
+                              filled: true,
+                              fillColor: const Color(0xFF2A2A3E),
+                              border: OutlineInputBorder(
+                                borderRadius:
+                                    BorderRadius.circular(10),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding:
+                                  const EdgeInsets.all(14),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+
+                // ── Layout principal baseado na orientação ──
+                if (isLandscape) {
+                  // Landscape: Row — player + painel lateral
+                  return Row(
+                    children: [
+                      Expanded(child: playerWidget),
+                      if (showNotes)
+                        SizedBox(
+                          width: constraints.maxWidth * 0.30,
+                          child: notesWidget,
+                        ),
+                    ],
+                  );
+                } else {
+                  // Portrait: Column — 70% vídeo em cima, 30% anotações embaixo
+                  return Column(
+                    children: [
+                      Expanded(
+                        flex: showNotes ? 7 : 1,
+                        child: playerWidget,
+                      ),
+                      if (showNotes)
+                        Expanded(
+                          flex: 3,
+                          child: notesWidget,
+                        ),
+                    ],
+                  );
+                }
+              },
             ),
           );
         },

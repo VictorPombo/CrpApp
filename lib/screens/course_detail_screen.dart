@@ -82,7 +82,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
         slivers: [
           // Header com gradiente
           SliverAppBar(
-            expandedHeight: 160,
+            expandedHeight: 200,
             pinned: true,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -100,62 +100,70 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(gradient: AppColors.brandGradient),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 40),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          course.code,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Text(
-                          course.title,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
+                child: SafeArea(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          ...List.generate(
-                              5,
-                              (i) => Icon(
-                                    i < course.rating.floor()
-                                        ? Icons.star
-                                        : Icons.star_border,
-                                    color: Colors.amber,
-                                    size: 16,
-                                  )),
-                          const SizedBox(width: 6),
+                          const SizedBox(height: 30),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              course.code,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
                           Text(
-                            '${course.rating}  ·  ${course.studentsCount} alunos',
+                            course.title,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                                color: Colors.white70, fontSize: 13),
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ...List.generate(
+                                  5,
+                                  (i) => Icon(
+                                        i < course.rating.floor()
+                                            ? Icons.star
+                                            : Icons.star_border,
+                                        color: Colors.amber,
+                                        size: 16,
+                                      )),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${course.rating}  ·  ${course.studentsCount} alunos',
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 13),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -651,17 +659,21 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.08),
+              color: isDark
+                  ? AppColors.secondary.withValues(alpha: 0.12)
+                  : AppColors.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               children: [
-                Icon(Icons.school_outlined, color: AppColors.primary, size: 20),
+                Icon(Icons.school_outlined,
+                    color: isDark ? AppColors.secondary : AppColors.primary,
+                    size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text('${(progress * 100).toInt()}% concluído — pronto para avaliação!',
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
-                      color: AppColors.primary)),
+                      color: isDark ? AppColors.secondary : AppColors.primary)),
                 ),
               ],
             ),

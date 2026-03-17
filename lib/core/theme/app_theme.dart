@@ -32,10 +32,10 @@ class AppColors {
   // ═══════════════════════════════════════
   // DARK THEME
   // ═══════════════════════════════════════
-  static const darkBg = Color(0xFF0D0F1A);
-  static const darkSurface = Color(0xFF151828);
-  static const darkCard = Color(0xFF1C2035);
-  static const darkDivider = Color(0xFF2A2E45);
+  static const darkBg = Color(0xFF1A1D2E);       // Fundo escuro profissional
+  static const darkSurface = Color(0xFF222538);    // Superfície
+  static const darkCard = Color(0xFF2A2D42);       // Cards
+  static const darkDivider = Color(0xFF3A3D55);    // Divisores
 
   // ═══════════════════════════════════════
   // LIGHT THEME

@@ -169,7 +169,9 @@ class PaymentsScreen extends StatelessWidget {
                                 child: Icon(
                                     _methodIcon(p['method'] ?? ''),
                                     size: 20,
-                                    color: AppColors.primary),
+                                    color: isDark
+                                        ? AppColors.secondary
+                                        : AppColors.primary),
                               ),
                               const SizedBox(width: 12),
                               Expanded(

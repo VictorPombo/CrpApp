@@ -150,7 +150,8 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
             keyboardType: keyboardType,
             inputFormatters: inputFormatters,
             decoration: InputDecoration(
-              prefixIcon: Icon(icon, size: 20),
+              prefixIcon: Icon(icon, size: 20,
+                  color: isDark ? AppColors.secondary : null),
               hintText: hintText,
               filled: true,
               fillColor: isDark ? AppColors.darkCard : Colors.grey[100],
