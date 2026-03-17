@@ -77,6 +77,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final linkColor = isDark ? AppColors.secondaryLight : AppColors.primary;
+    final subtextColor = isDark ? Colors.grey[300] : Colors.grey[600];
 
     return Scaffold(
       body: SafeArea(
@@ -95,25 +97,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     icon: const Icon(Icons.arrow_back),
                   ),
                   const SizedBox(height: 8),
-                  // Logo
+                  // Logo — versão correta para o tema
                   Center(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.asset(
-                        'assets/images/crp_logo.png',
-                        height: 64,
-                        errorBuilder: (_, __, ___) => Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            gradient: AppColors.brandGradient,
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: const Text('CRP',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold)),
+                    child: Image.asset(
+                      isDark
+                          ? 'assets/images/crp_logo_dark.png'
+                          : 'assets/images/crp_logo.png',
+                      height: 64,
+                      errorBuilder: (_, __, ___) => Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          gradient: AppColors.brandGradient,
+                          borderRadius: BorderRadius.circular(18),
                         ),
+                        child: const Text('CRP',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ),
@@ -126,10 +127,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 6),
                   Center(
                     child: Text('Cadastre-se para acessar os cursos',
-                        style: TextStyle(
-                            fontSize: 14,
-                            color:
-                                isDark ? Colors.grey[400] : Colors.grey[600])),
+                        style: TextStyle(fontSize: 14, color: subtextColor)),
                   ),
                   const SizedBox(height: 24),
 
@@ -175,7 +173,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           controller: _companyCtrl,
                           label: 'Empresa (opcional)',
                           type: AuthFieldType.text,
-                          validator: (_) => null, // Opcional
+                          validator: (_) => null,
                         ),
                         const SizedBox(height: 14),
                         AuthTextField(
@@ -215,7 +213,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               value: _agreedTerms,
                               onChanged: (v) =>
                                   setState(() => _agreedTerms = v ?? false),
-                              activeColor: AppColors.primary,
+                              activeColor: AppColors.secondary,
                             ),
                             Expanded(
                               child: GestureDetector(
@@ -225,15 +223,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   TextSpan(
                                     text: 'Li e aceito os ',
                                     style: TextStyle(
-                                        fontSize: 13,
-                                        color: isDark
-                                            ? Colors.grey[400]
-                                            : Colors.grey[600]),
+                                        fontSize: 13, color: subtextColor),
                                     children: [
                                       TextSpan(
                                         text: 'Termos de Uso',
                                         style: TextStyle(
-                                          color: AppColors.primary,
+                                          color: linkColor,
                                           fontWeight: FontWeight.w600,
                                           fontSize: 13,
                                         ),
@@ -242,7 +237,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       TextSpan(
                                         text: 'Política de Privacidade',
                                         style: TextStyle(
-                                          color: AppColors.primary,
+                                          color: linkColor,
                                           fontWeight: FontWeight.w600,
                                           fontSize: 13,
                                         ),
@@ -296,14 +291,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       children: [
                         Text('Já tem conta?',
                             style: TextStyle(
-                                fontSize: 14,
-                                color: isDark
-                                    ? Colors.grey[400]
-                                    : Colors.grey[600])),
+                                fontSize: 14, color: subtextColor)),
                         TextButton(
                           onPressed: () => context.go('/login'),
-                          child: const Text('Entrar',
-                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          child: Text('Entrar',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: linkColor)),
                         ),
                       ],
                     ),

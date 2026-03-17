@@ -81,6 +81,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final email = widget.email ?? 'seu email';
+    final subtextColor = isDark ? Colors.grey[300] : Colors.grey[600];
+    final linkColor = isDark ? AppColors.secondaryLight : AppColors.primary;
 
     return Scaffold(
       appBar: AppBar(
@@ -113,9 +115,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                 Text(
                   'Enviamos um código de 6 dígitos para\n$email',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                  style: TextStyle(fontSize: 14, color: subtextColor),
                 ),
                 const SizedBox(height: 32),
 
@@ -204,9 +204,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                         : 'Não recebeu? Reenviar código',
                     style: TextStyle(
                       fontSize: 13,
-                      color: _cooldown > 0
-                          ? (isDark ? Colors.grey[600] : Colors.grey[400])
-                          : AppColors.primary,
+                      color: _cooldown > 0 ? subtextColor : linkColor,
                     ),
                   ),
                 ),

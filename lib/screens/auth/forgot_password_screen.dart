@@ -28,7 +28,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
-    await Future.delayed(const Duration(milliseconds: 800)); // Mock
+    await Future.delayed(const Duration(milliseconds: 800));
 
     if (!mounted) return;
     setState(() {
@@ -40,6 +40,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final linkColor = isDark ? AppColors.secondaryLight : AppColors.primary;
+    final subtextColor = isDark ? Colors.grey[300] : Colors.grey[600];
 
     return Scaffold(
       appBar: AppBar(
@@ -52,24 +54,26 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
-            child: _sent ? _buildSuccess(isDark) : _buildForm(isDark),
+            child: _sent
+                ? _buildSuccess(subtextColor, linkColor)
+                : _buildForm(subtextColor, linkColor),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildForm(bool isDark) {
+  Widget _buildForm(Color? subtextColor, Color linkColor) {
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
+            color: AppColors.secondary.withValues(alpha: 0.15),
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.lock_reset,
-              size: 48, color: AppColors.primary),
+              size: 48, color: AppColors.secondary),
         ),
         const SizedBox(height: 24),
         const Text('Redefinir senha',
@@ -78,9 +82,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Text(
           'Informe seu email e enviaremos um link\npara redefinir sua senha.',
           textAlign: TextAlign.center,
-          style: TextStyle(
-              fontSize: 14,
-              color: isDark ? Colors.grey[400] : Colors.grey[600]),
+          style: TextStyle(fontSize: 14, color: subtextColor),
         ),
         const SizedBox(height: 32),
         Form(
@@ -107,13 +109,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         const SizedBox(height: 16),
         TextButton(
           onPressed: () => context.go('/login'),
-          child: const Text('Voltar para o login'),
+          child: Text('Voltar para o login',
+              style: TextStyle(color: linkColor)),
         ),
       ],
     );
   }
 
-  Widget _buildSuccess(bool isDark) {
+  Widget _buildSuccess(Color? subtextColor, Color linkColor) {
     return Column(
       children: [
         Container(
@@ -132,17 +135,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Text(
           'Enviamos um link de redefinição para\n${_emailCtrl.text}',
           textAlign: TextAlign.center,
-          style: TextStyle(
-              fontSize: 14,
-              color: isDark ? Colors.grey[400] : Colors.grey[600]),
+          style: TextStyle(fontSize: 14, color: subtextColor),
         ),
         const SizedBox(height: 12),
         Text(
           'Verifique também a pasta de spam.',
           textAlign: TextAlign.center,
-          style: TextStyle(
-              fontSize: 13,
-              color: isDark ? Colors.grey[500] : Colors.grey[500]),
+          style: TextStyle(fontSize: 13, color: subtextColor),
         ),
         const SizedBox(height: 32),
         AuthButton(

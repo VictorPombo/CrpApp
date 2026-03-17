@@ -56,6 +56,10 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Cor para links/destaques — visível em ambos os modos
+    final linkColor = isDark ? AppColors.secondaryLight : AppColors.primary;
+    // Cor para subtextos
+    final subtextColor = isDark ? Colors.grey[300] : Colors.grey[600];
 
     return Scaffold(
       body: SafeArea(
@@ -68,25 +72,24 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  // Logo
+                  // Logo — usa versão dark no modo escuro
                   Center(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.asset(
-                        'assets/images/crp_logo.png',
-                        height: 80,
-                        errorBuilder: (_, __, ___) => Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: AppColors.brandGradient,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Text('CRP',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold)),
+                    child: Image.asset(
+                      isDark
+                          ? 'assets/images/crp_logo_dark.png'
+                          : 'assets/images/crp_logo.png',
+                      height: 80,
+                      errorBuilder: (_, __, ___) => Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: AppColors.brandGradient,
+                          borderRadius: BorderRadius.circular(16),
                         ),
+                        child: const Text('CRP',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ),
@@ -99,10 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 6),
                   Center(
                     child: Text('Entre na sua conta para continuar',
-                        style: TextStyle(
-                            fontSize: 14,
-                            color:
-                                isDark ? Colors.grey[400] : Colors.grey[600])),
+                        style: TextStyle(fontSize: 14, color: subtextColor)),
                   ),
                   const SizedBox(height: 36),
 
@@ -140,9 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: Text('Esqueci minha senha',
                                 style: TextStyle(
                                     fontSize: 13,
-                                    color: isDark
-                                        ? Colors.grey[400]
-                                        : AppColors.primary)),
+                                    color: linkColor)),
                           ),
                         ),
 
@@ -188,14 +186,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         Text('Não tem conta?',
                             style: TextStyle(
-                                fontSize: 14,
-                                color: isDark
-                                    ? Colors.grey[400]
-                                    : Colors.grey[600])),
+                                fontSize: 14, color: subtextColor)),
                         TextButton(
                           onPressed: () => context.go('/register'),
-                          child: const Text('Criar conta',
-                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          child: Text('Criar conta',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: linkColor)),
                         ),
                       ],
                     ),

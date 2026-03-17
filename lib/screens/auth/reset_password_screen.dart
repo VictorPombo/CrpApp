@@ -51,6 +51,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final subtextColor = isDark ? Colors.grey[300] : Colors.grey[600];
 
     return Scaffold(
       appBar: AppBar(
@@ -63,24 +64,26 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
-            child: _success ? _buildSuccess(isDark) : _buildForm(isDark),
+            child: _success
+                ? _buildSuccess(subtextColor)
+                : _buildForm(subtextColor),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildForm(bool isDark) {
+  Widget _buildForm(Color? subtextColor) {
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
+            color: AppColors.secondary.withValues(alpha: 0.15),
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.lock_open,
-              size: 48, color: AppColors.primary),
+              size: 48, color: AppColors.secondary),
         ),
         const SizedBox(height: 24),
         const Text('Criar nova senha',
@@ -89,9 +92,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         Text(
           'Escolha uma senha forte e segura.',
           textAlign: TextAlign.center,
-          style: TextStyle(
-              fontSize: 14,
-              color: isDark ? Colors.grey[400] : Colors.grey[600]),
+          style: TextStyle(fontSize: 14, color: subtextColor),
         ),
         const SizedBox(height: 32),
         Form(
@@ -135,7 +136,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  Widget _buildSuccess(bool isDark) {
+  Widget _buildSuccess(Color? subtextColor) {
     return Column(
       children: [
         Container(
@@ -154,9 +155,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         Text(
           'Sua senha foi alterada com sucesso.\nFaça login com a nova senha.',
           textAlign: TextAlign.center,
-          style: TextStyle(
-              fontSize: 14,
-              color: isDark ? Colors.grey[400] : Colors.grey[600]),
+          style: TextStyle(fontSize: 14, color: subtextColor),
         ),
         const SizedBox(height: 32),
         AuthButton(
