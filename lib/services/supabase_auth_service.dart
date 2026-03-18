@@ -67,12 +67,12 @@ class SupabaseAuthService extends AuthServiceBase {
 
       _isLoading = false;
       notifyListeners();
-      debugPrint('[SupaAuth] Login OK: ${_currentUser!.email}');
+
       return AuthResult.ok(_currentUser!);
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      debugPrint('[SupaAuth] Login erro: $e');
+
       return AuthResult.error(_parseError(e));
     }
   }
@@ -141,7 +141,7 @@ class SupabaseAuthService extends AuthServiceBase {
     try {
       await _client.auth.signOut();
     } catch (e) {
-      debugPrint('[SupaAuth] Logout erro: $e');
+
     }
     _currentUser = null;
     notifyListeners();
@@ -176,10 +176,10 @@ class SupabaseAuthService extends AuthServiceBase {
           twoFactorEnabled: false,
           createdAt: DateTime.parse(user.createdAt),
         );
-        debugPrint('[SupaAuth] Sessão restaurada: ${_currentUser!.email}');
+
       }
     } catch (e) {
-      debugPrint('[SupaAuth] Restore session erro: $e');
+
     }
 
     _isLoading = false;
@@ -307,7 +307,7 @@ class SupabaseAuthService extends AuthServiceBase {
       notifyListeners();
       return true;
     } catch (e) {
-      debugPrint('[SupaAuth] Update profile erro: $e');
+
       return false;
     }
   }

@@ -90,7 +90,7 @@ class MockAuthService extends AuthServiceBase {
 
     _isLoading = false;
     notifyListeners();
-    debugPrint('[MockAuth] Login OK: $userId');
+
     return AuthResult.ok(_currentUser!);
   }
 
@@ -146,7 +146,7 @@ class MockAuthService extends AuthServiceBase {
 
     _isLoading = false;
     notifyListeners();
-    debugPrint('[MockAuth] Registro OK: $username');
+
     return AuthResult.ok(_currentUser!);
   }
 
@@ -161,7 +161,7 @@ class MockAuthService extends AuthServiceBase {
     await _p.remove('auth_role');
     _currentUser = null;
     notifyListeners();
-    debugPrint('[MockAuth] Logout');
+
   }
 
   @override
@@ -183,7 +183,7 @@ class MockAuthService extends AuthServiceBase {
         emailVerified: true,
         createdAt: DateTime.now(),
       );
-      debugPrint('[MockAuth] Sessão restaurada: $userId');
+
     }
 
     _isLoading = false;

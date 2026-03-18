@@ -8,6 +8,7 @@ import '../services/local_storage_service.dart';
 import 'student/personal_data_screen.dart';
 import 'student/course_history_screen.dart';
 import 'student/certificates_list_screen.dart';
+import 'student/verify_certificate_screen.dart';
 import 'student/payments_screen.dart';
 import 'auth/change_password_screen.dart';
 
@@ -17,6 +18,12 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final user = AuthService.currentUser;
+    final userName = user.username ?? 'Usuário';
+    final userEmail = user.email ?? '';
+    final initials = userName.isNotEmpty
+        ? userName.split(' ').map((w) => w.isNotEmpty ? w[0] : '').take(2).join().toUpperCase()
+        : '?';
 
     return SafeArea(
       child: Center(
@@ -47,22 +54,22 @@ class ProfileScreen extends StatelessWidget {
                       gradient: AppColors.brandGradient,
                     ),
                     padding: const EdgeInsets.all(4),
-                    child: const CircleAvatar(
+                    child: CircleAvatar(
                       radius: 40,
-                      backgroundColor: Color(0xFF1A1A1A),
-                      child: Text('CA',
-                          style: TextStyle(
+                      backgroundColor: const Color(0xFF1A1A1A),
+                      child: Text(initials,
+                          style: const TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
                               color: Colors.white)),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('Carlos Alberto Silva',
+                  Text(userName,
                       style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                          const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
-                  Text('carlos@email.com',
+                  Text(userEmail,
                       style: TextStyle(color: Colors.grey[500], fontSize: 14)),
                 ],
               ),
@@ -85,6 +92,11 @@ class ProfileScreen extends StatelessWidget {
                     icon: Icons.workspace_premium_outlined,
                     title: 'Certificados',
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CertificatesListScreen()))),
+                _MenuItem(
+                    icon: Icons.verified_user_outlined,
+                    title: 'Verificar certificado',
+                    subtitle: 'Valide a autenticidade pelo serial',
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VerifyCertificateScreen()))),
                 _MenuItem(
                     icon: Icons.receipt_long_outlined,
                     title: 'Pagamentos',

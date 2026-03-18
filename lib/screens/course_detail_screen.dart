@@ -293,7 +293,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                             : (isDark ? Colors.grey[400] : Colors.grey[600]),
                       ),
                     ),
-                    children: module.lessons.map((lesson) {
+                    children: [
+                      ...module.lessons.map((lesson) {
                       // Calcula o índice global da aula
                       int globalIndex = 0;
                       for (final m in course.modules) {
@@ -317,7 +318,56 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                         globalIndex: globalIndex,
                         course: course,
                       );
-                    }).toList(),
+                    }),
+                      // Quiz do módulo
+                      Container(
+                        margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                        child: InkWell(
+                          onTap: () => context.push(
+                            '/module-quiz/${module.id}'
+                            '?title=${Uri.encodeComponent('Quiz — ${module.title}')}',
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  const Color(0xFF6C5CE7).withValues(alpha: isDark ? 0.2 : 0.08),
+                                  const Color(0xFFA29BFE).withValues(alpha: isDark ? 0.1 : 0.04),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: const Color(0xFF6C5CE7).withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 28, height: 28,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF6C5CE7).withValues(alpha: 0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.quiz_outlined, size: 16, color: Color(0xFF6C5CE7)),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text('Quiz do Módulo',
+                                    style: TextStyle(
+                                      fontSize: 13, fontWeight: FontWeight.w600,
+                                      color: isDark ? const Color(0xFFA29BFE) : const Color(0xFF6C5CE7),
+                                    )),
+                                ),
+                                Icon(Icons.arrow_forward_ios, size: 14,
+                                    color: isDark ? const Color(0xFFA29BFE) : const Color(0xFF6C5CE7)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 );
               },

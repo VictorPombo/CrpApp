@@ -14,10 +14,13 @@ import 'screens/lesson_screen.dart';
 import 'screens/certificate_screen.dart';
 import 'screens/certificate_validation_screen.dart';
 import 'screens/student/quiz_screen.dart';
+import 'screens/student/module_quiz_screen.dart';
+import 'screens/lesson_content_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth/verify_email_screen.dart';
 import 'screens/auth/forgot_password_screen.dart';
 import 'screens/auth/reset_password_screen.dart';
+import 'services/supabase_content_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,18 +31,16 @@ void main() async {
       url: SupabaseConfig.url,
       anonKey: SupabaseConfig.anonKey,
     );
-    debugPrint('[SUPABASE] Inicializado com sucesso');
   } catch (e) {
     debugPrint('[SUPABASE] Erro na inicialização (modo offline): $e');
   }
 
   await LocalStorageService.init();
 
-  // Seed demo data apenas no modo mock (não Supabase)
-  if (!SupabaseConfig.useSupabaseAuth) {
-    await LocalStorageService.clearAll(); // Reset para demo
-    await LocalStorageService.seedDemoData(); // Popular dados de teste
-  }
+  // Seed dados de demonstração (cursos, progresso, certificados)
+  // Esses dados ficam no localStorage do browser — independente do auth
+  await LocalStorageService.clearAll();
+  await LocalStorageService.seedDemoData();
 
   await ThemeService.load();
   await AuthService.load(); // Restaurar sessão (mock ou Supabase)
@@ -58,7 +59,7 @@ class _CrpAppState extends State<CrpApp> {
   bool _hasShownSplash = false;
 
   // Rotas que exigem autenticação
-  static const _protectedPrefixes = ['/lesson', '/certificate', '/quiz'];
+  static const _protectedPrefixes = ['/home', '/lesson', '/certificate', '/quiz'];
   // Rotas públicas que devem funcionar como deep link (sem splash)
   static const _publicDeepLinkPrefixes = ['/validar'];
 
@@ -153,6 +154,30 @@ class _CrpAppState extends State<CrpApp> {
             );
           },
         ),
+        GoRoute(
+          path: '/apostila/:courseId',
+          builder: (context, state) {
+            final courseId = state.pathParameters['courseId']!;
+            final title = state.uri.queryParameters['title'] ?? 'Apostila';
+            final lessonId = state.uri.queryParameters['lessonId'] ?? '';
+            return LessonContentScreen(
+              lessonId: lessonId,
+              courseId: courseId,
+              lessonTitle: title,
+            );
+          },
+        ),
+        GoRoute(
+          path: '/module-quiz/:moduleId',
+          builder: (context, state) {
+            final moduleId = state.pathParameters['moduleId']!;
+            final title = state.uri.queryParameters['title'] ?? 'Quiz';
+            return ModuleQuizScreen(
+              moduleId: moduleId,
+              moduleTitle: title,
+            );
+          },
+        ),
       ],
     );
   }
@@ -173,7 +198,7 @@ class _CrpAppState extends State<CrpApp> {
       if (fragment.isNotEmpty) {
         final isPublicDeepLink = _publicDeepLinkPrefixes.any((p) => fragment.startsWith(p));
         if (isPublicDeepLink) {
-          debugPrint('[ROUTER] Deep link detectado: $fragment → pulando splash');
+          // Deep link detectado — pular splash
           return '/$fragment'.replaceAll('//', '/'); // Normalizar path
         }
       }

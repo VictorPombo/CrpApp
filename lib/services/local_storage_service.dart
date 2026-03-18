@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/config/supabase_config.dart';
 import 'certificate_hash_service.dart';
 
 /// Serviço centralizado de persistência local via SharedPreferences.
@@ -235,14 +236,33 @@ class LocalStorageService {
       'student_name': studentName ?? 'Aluno',
       'student_cpf': studentCpf ?? '',
       'company': company ?? '',
-      'instructor_name': instructorName ?? 'Eng. Fernando Lima',
-      'instructor_crea': instructorCrea ?? 'CREA-SP 567890',
+      'instructor_name': instructorName ?? 'Eng. Carlos Roberto Palácio',
+      'instructor_crea': instructorCrea ?? 'CREA-SP · RNP 2614455296',
       'issued_at': issuedAt,
       'valid_until': validUntil,
       'status': 'valid', // valid | expired | revoked
     });
 
     await _p.setString(_keyCertificates, json.encode(list));
+  }
+
+  /// Atualiza campos de um certificado existente no localStorage.
+  /// Usado para personalizar o certificado com dados do usuário logado.
+  static Future<void> updateCertificate({
+    required String courseId,
+    required Map<String, dynamic> updates,
+  }) async {
+    final list = getCertificates();
+    final idx = list.indexWhere((c) => c['course_id'] == courseId);
+    if (idx == -1) return;
+
+    for (final entry in updates.entries) {
+      list[idx][entry.key] = entry.value;
+    }
+
+    await _p.setString(_keyCertificates, json.encode(list));
+    await _p.reload();
+
   }
 
   // ═══════════════════════════════════════
@@ -316,28 +336,49 @@ class LocalStorageService {
     for (final key in keys) {
       await _p.remove(key);
     }
+
+    // Se Supabase auth ativo, limpar chaves de sessão mock antigas
+    if (SupabaseConfig.useSupabaseAuth) {
+      await _p.remove('auth_user_id');
+      await _p.remove('auth_user');
+      await _p.remove('auth_email');
+      await _p.remove('auth_cpf');
+      await _p.remove('auth_company');
+      await _p.remove('auth_role');
+      // Limpar chaves de usuários mock
+      final userKeys = _p.getKeys().where((k) => k.startsWith('user_'));
+      for (final key in userKeys) {
+        await _p.remove(key);
+      }
+    }
+
     // Forçar reload do cache interno
     await _p.reload();
-    debugPrint('[CLEAR_ALL] Dados limpos. Keys restantes: ${_p.getKeys()}');
+
   }
 
   /// Seed data para demonstração — cria 4 estados de teste.
   static Future<void> seedDemoData() async {
-    debugPrint('[SEED] Populando dados de demonstração...');
+
 
     // ─── Auto-registro e auto-login do demo user ───
-    await _p.setString('user_carlos_pass', '123456');
-    await _p.setString('user_carlos_email', 'carlos@crptreinamentos.com.br');
-    await _p.setString('user_carlos_cpf', '123.456.789-00');
-    await _p.setString('user_carlos_company', 'CRP Treinamentos');
-    // Persistir sessão ativa
-    await _p.setString('auth_user_id', 'carlos');
-    await _p.setString('auth_user', 'carlos');
-    await _p.setString('auth_email', 'carlos@crptreinamentos.com.br');
-    await _p.setString('auth_cpf', '123.456.789-00');
-    await _p.setString('auth_company', 'CRP Treinamentos');
-    await _p.setString('auth_role', 'student');
-    debugPrint('[SEED] Demo user: carlos / 123456');
+    // (Só no modo mock — com Supabase, o user registra conta real)
+    if (!SupabaseConfig.useSupabaseAuth) {
+      await _p.setString('user_carlos_pass', '123456');
+      await _p.setString('user_carlos_email', 'carlos@crptreinamentos.com.br');
+      await _p.setString('user_carlos_cpf', '123.456.789-00');
+      await _p.setString('user_carlos_company', 'CRP Treinamentos');
+      // Persistir sessão ativa
+      await _p.setString('auth_user_id', 'carlos');
+      await _p.setString('auth_user', 'carlos');
+      await _p.setString('auth_email', 'carlos@crptreinamentos.com.br');
+      await _p.setString('auth_cpf', '123.456.789-00');
+      await _p.setString('auth_company', 'CRP Treinamentos');
+      await _p.setString('auth_role', 'student');
+
+    } else {
+
+    }
 
     final now = DateTime.now().toIso8601String();
 
@@ -400,43 +441,10 @@ class LocalStorageService {
 
     await _p.setString(_keyEnrollments, json.encode(enrollments));
 
-    // Certificado para NR-10 (com hash SHA-256)
-    final nr10Serial = CertificateHashService.generateSerial(
-      courseCode: 'NR-10',
-      sequentialNumber: 1,
-      year: DateTime.now().year,
-    );
-    final nr10IssuedAt = now;
-    final nr10ValidUntil = DateTime.now().add(const Duration(days: 730)).toIso8601String();
-    final nr10Hash = CertificateHashService.generateHash(
-      serial: nr10Serial,
-      cpf: '123.456.789-00',
-      courseId: 'nr10',
-      quizScore: 85,
-      issuedAt: nr10IssuedAt,
-    );
-
-    final certificates = [
-      {
-        'course_id': 'nr10',
-        'course_code': 'NR-10',
-        'course_title': 'Seguranca em Instalacoes e Servicos em Eletricidade',
-        'course_hours': 40,
-        'cert_code': nr10Serial,
-        'hash': nr10Hash,
-        'quiz_score': 85,
-        'student_name': 'carlos',
-        'student_cpf': '123.456.789-00',
-        'company': 'CRP Treinamentos',
-        'instructor_name': 'Eng. Fernando Lima',
-        'instructor_crea': 'CREA-SP 567890',
-        'issued_at': nr10IssuedAt,
-        'valid_until': nr10ValidUntil,
-        'status': 'valid',
-      },
-    ];
-
-    await _p.setString(_keyCertificates, json.encode(certificates));
+    // Certificados NÃO são pré-gerados no seed.
+    // São emitidos permanentemente quando o usuário visualiza
+    // o certificado pela primeira vez (com dados reais do auth).
+    // Isso garante serial único, hash SHA-256 correto e nome real.
 
     // Pagamento para os 3 cursos matriculados
     final payments = [
@@ -471,8 +479,8 @@ class LocalStorageService {
     // Verificação
     await _p.reload();
     final check = _p.getString(_keyEnrollments);
-    debugPrint('[SEED] Enrollments gravados: ${check != null ? '${check.length} chars' : 'NULL!'}');
-    debugPrint('[SEED] isEnrolled(nr35)=${isEnrolled('nr35')}, isEnrolled(nr10)=${isEnrolled('nr10')}, isEnrolled(nr05)=${isEnrolled('nr05')}');
-    debugPrint('[SEED] getProgress(nr35)=${getProgress('nr35')}, getProgress(nr10)=${getProgress('nr10')}, getProgress(nr05)=${getProgress('nr05')}');
+
+
+
   }
 }

@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../core/theme/app_theme.dart';
 import '../core/app_spacing.dart';
 import '../models/lesson_model.dart';
 import '../services/local_storage_service.dart';
+import '../services/supabase_content_service.dart';
 
 /// Tela de player de aula.
 /// Corrigida: overflow, anotações persistentes, seek, velocidade, conclusão real, quiz na última aula.
@@ -33,6 +36,10 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
   late TabController _tabController;
   bool _isCompleted = false;
   bool _isPlaying = false;
+
+  // Apostila do Supabase
+  Map<String, dynamic>? _apostilaContent;
+  bool _loadingApostila = true;
 
   // Seek & timer
   double _seekPosition = 0.0;
@@ -108,6 +115,31 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
       final completed =
           LocalStorageService.getCompletedLessons(widget.courseId!);
       _isCompleted = completed.contains(widget.lessonId);
+    }
+
+    // Carregar apostila do Supabase
+    _loadApostila();
+  }
+
+  Future<void> _loadApostila() async {
+    debugPrint('\n📚 _loadApostila START — lessonId=${widget.lessonId}, courseId=${widget.courseId}');
+    if (widget.courseId == null) {
+      debugPrint('📚 courseId is null — skipping apostila load');
+      setState(() => _loadingApostila = false);
+      return;
+    }
+    try {
+      final content = await SupabaseContentService.getApostila(widget.lessonId);
+      debugPrint('📚 getApostila result: ${content != null ? "FOUND — title: ${content['title']}" : "NULL (not found)"}');
+      if (mounted) {
+        setState(() {
+          _apostilaContent = content;
+          _loadingApostila = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('📚 _loadApostila EXCEPTION: $e');
+      if (mounted) setState(() => _loadingApostila = false);
     }
   }
 
@@ -802,33 +834,166 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
                       ),
                     ),
 
-                    // Materiais tab — BUG 1 fix: SingleChildScrollView
-                    _materials.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.folder_open,
-                                    size: 48, color: Colors.grey[500]),
-                                const SizedBox(height: 12),
-                                Text('Nenhum material disponível',
-                                    style: TextStyle(
-                                        color: Colors.grey[500])),
-                              ],
-                            ),
-                          )
+                    // Materiais tab — Apostila do Supabase + materiais locais
+                    _loadingApostila
+                        ? const Center(child: CircularProgressIndicator())
                         : SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(
-                                16, 16, 16, 80),
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                             child: Column(
-                              children: _materials
-                                  .map((mat) =>
-                                      _MaterialTile(material: mat))
-                                  .toList(),
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Apostila do Supabase
+                                if (_apostilaContent != null) ...[
+                                  // Header
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          const Color(0xFF6C5CE7).withValues(alpha: 0.15),
+                                          const Color(0xFF6C5CE7).withValues(alpha: 0.05),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(14),
+                                      border: Border.all(
+                                        color: const Color(0xFF6C5CE7).withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF6C5CE7).withValues(alpha: 0.2),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: const Icon(Icons.auto_stories, size: 20, color: Color(0xFF6C5CE7)),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    _apostilaContent!['title'] as String? ?? 'Apostila',
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold, fontSize: 15,
+                                                      color: isDark ? Colors.white : Colors.black87,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Text('Material de estudo',
+                                                      style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Row(children: [
+                                          Expanded(
+                                            child: OutlinedButton.icon(
+                                              onPressed: () {
+                                                if (widget.courseId != null) {
+                                                  context.push(
+                                                    '/apostila/${widget.courseId}'
+                                                    '?title=${Uri.encodeComponent(_apostilaContent!['title'] as String? ?? 'Apostila')}'
+                                                    '&lessonId=${widget.lessonId}',
+                                                  );
+                                                }
+                                              },
+                                              icon: const Icon(Icons.menu_book, size: 18),
+                                              label: const Text('Ler Apostila'),
+                                              style: OutlinedButton.styleFrom(
+                                                foregroundColor: const Color(0xFF6C5CE7),
+                                                side: const BorderSide(color: Color(0xFF6C5CE7)),
+                                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: ElevatedButton.icon(
+                                              onPressed: () {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(content: Text('Gerando PDF... em breve!')),
+                                                );
+                                              },
+                                              icon: const Icon(Icons.picture_as_pdf, size: 18),
+                                              label: const Text('Baixar PDF'),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: const Color(0xFF6C5CE7),
+                                                foregroundColor: Colors.white,
+                                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                              ),
+                                            ),
+                                          ),
+                                        ]),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  // Preview do conteúdo markdown
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF222538) : Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isDark ? Colors.white12 : Colors.grey[200]!,
+                                      ),
+                                    ),
+                                    child: MarkdownBody(
+                                      data: _apostilaContent!['body'] as String? ?? '',
+                                      styleSheet: MarkdownStyleSheet(
+                                        h2: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                                            color: isDark ? Colors.white : Colors.black87),
+                                        h3: TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
+                                            color: isDark ? Colors.white.withValues(alpha: 0.9) : Colors.black87),
+                                        p: TextStyle(fontSize: 13, height: 1.6,
+                                            color: isDark ? Colors.white70 : Colors.black87),
+                                        listBullet: TextStyle(fontSize: 13,
+                                            color: isDark ? Colors.white70 : Colors.black87),
+                                        strong: TextStyle(fontWeight: FontWeight.bold,
+                                            color: isDark ? Colors.white : Colors.black),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
+                                // Materiais locais (arquivos antigos)
+                                if (_materials.isNotEmpty) ...[
+                                  Text('Outros materiais',
+                                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14,
+                                          color: isDark ? Colors.white70 : Colors.black54)),
+                                  const SizedBox(height: 8),
+                                  ..._materials.map((mat) => _MaterialTile(material: mat)),
+                                ],
+                                if (_apostilaContent == null && _materials.isEmpty)
+                                  Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const SizedBox(height: 40),
+                                        Icon(Icons.folder_open, size: 48, color: Colors.grey[500]),
+                                        const SizedBox(height: 12),
+                                        Text('Nenhum material disponível',
+                                            style: TextStyle(color: Colors.grey[500])),
+                                      ],
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
 
-                    // Anotações tab — BUG 2 fix: caixa grande que preenche todo o espaço
+                    // Anotações tab — caixa grande que preenche todo o espaço
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: TextField(
@@ -839,19 +1004,37 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
                         keyboardType: TextInputType.multiline,
                         textAlignVertical: TextAlignVertical.top,
                         textInputAction: TextInputAction.newline,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black87,
+                          fontSize: 14,
+                          height: 1.6,
+                        ),
+                        cursorColor: AppColors.secondary,
                         decoration: InputDecoration(
-                          hintText:
-                              'Escreva suas anotações aqui...',
+                          hintText: 'Escreva suas anotações aqui...',
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.white30 : Colors.grey[400],
+                            fontSize: 14,
+                          ),
                           filled: true,
                           fillColor: isDark
-                              ? AppColors.darkCard
-                              : Colors.grey[100],
-                          border: OutlineInputBorder(
+                              ? const Color(0xFF2A2D42)
+                              : Colors.grey[50],
+                          enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+                            borderSide: BorderSide(
+                              color: isDark ? const Color(0xFF4A4D65) : Colors.grey[300]!,
+                              width: 1,
+                            ),
                           ),
-                          contentPadding:
-                              const EdgeInsets.all(16),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.secondary,
+                              width: 1.5,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.all(16),
                         ),
                       ),
                     ),

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../core/theme/app_theme.dart';
 import '../core/app_spacing.dart';
+import '../core/config/supabase_config.dart';
+import '../providers/auth_service.dart';
 import '../services/course_service_mock.dart';
 import '../services/local_storage_service.dart';
+import '../services/supabase_certificate_service.dart';
 import '../models/course_model.dart';
 
 /// Tela "Meus Cursos" — Baseada no mockup meus_cursos.png
@@ -18,6 +21,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   final _service = CourseServiceMock();
   late Future<List<Course>> _coursesFuture;
   String _selectedFilter = 'Todos';
+  int _certCount = 0;
 
   final _filters = ['Todos', 'Em andamento', 'Concluídos', 'Não iniciados'];
 
@@ -25,6 +29,16 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   void initState() {
     super.initState();
     _coursesFuture = _service.fetchCourses();
+    _loadCertCount();
+  }
+
+  Future<void> _loadCertCount() async {
+    if (SupabaseConfig.useSupabaseAuth) {
+      final certs = await SupabaseCertificateService.getUserCertificates();
+      if (mounted) setState(() => _certCount = certs.length);
+    } else {
+      setState(() => _certCount = LocalStorageService.getCertificates().length);
+    }
   }
 
   List<Course> _applyFilter(List<Course> courses) {
@@ -56,6 +70,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
           // Filtrar apenas cursos com enrollment real
           final enrollments = LocalStorageService.getEnrollments();
           final enrolledIds = enrollments.map((e) => e['course_id'] as String).toSet();
+
 
           final enrolledCourses = allCourses.where((c) => enrolledIds.contains(c.id)).map((c) {
             final progress = LocalStorageService.getProgress(c.id);
@@ -90,31 +105,42 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                                         .textTheme
                                         .headlineMedium),
                                 const SizedBox(height: 4),
-                                Text('Olá, Carlos',
-                                    style: TextStyle(
-                                        fontSize: 14,
-                                        color: isDark
-                                            ? Colors.grey[400]
-                                            : Colors.grey[600])),
+                                Builder(builder: (_) {
+                                  final name = AuthService.currentUser.username ?? 'Aluno';
+                                  final firstName = name.split(' ').first;
+                                  return Text('Olá, $firstName',
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          color: isDark
+                                              ? Colors.grey[400]
+                                              : Colors.grey[600]));
+                                }),
                               ],
                             ),
                           ),
                           // Avatar
-                          Container(
-                            width: 42,
-                            height: 42,
-                            decoration: const BoxDecoration(
-                              color: AppColors.secondary,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Center(
-                              child: Text('CA',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16)),
-                            ),
-                          ),
+                          Builder(builder: (_) {
+                            final name = AuthService.currentUser.username ?? 'Aluno';
+                            final parts = name.split(' ');
+                            final initials = parts.length >= 2
+                                ? '${parts.first[0]}${parts.last[0]}'.toUpperCase()
+                                : parts.first.substring(0, 2).toUpperCase();
+                            return Container(
+                              width: 42,
+                              height: 42,
+                              decoration: const BoxDecoration(
+                                color: AppColors.secondary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(initials,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16)),
+                              ),
+                            );
+                          }),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -128,7 +154,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                               value: '${completed.length}',
                               label: 'Concluídos'),
                           _StatChip(
-                              value: '${LocalStorageService.getCertificates().length}',
+                              value: '$_certCount',
                               label: 'Certificados'),
                         ],
                       ),

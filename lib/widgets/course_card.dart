@@ -84,7 +84,7 @@ class CourseCard extends StatelessWidget {
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color: isDark
-                              ? AppColors.primary.withValues(alpha: 0.2)
+                              ? AppColors.secondary.withValues(alpha: 0.25)
                               : AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -93,9 +93,9 @@ class CourseCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11,
                             color: isDark
-                                ? AppColors.primaryLight
+                                ? AppColors.secondary
                                 : AppColors.primary,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),

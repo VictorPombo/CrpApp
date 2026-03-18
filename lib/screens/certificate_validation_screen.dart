@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/local_storage_service.dart';
 import '../services/certificate_hash_service.dart';
+import '../services/supabase_certificate_service.dart';
+import '../core/config/supabase_config.dart';
 
 /// Tela publica de validacao de certificados.
 /// Acessivel via /validar/:code — qualquer pessoa pode verificar
@@ -26,28 +28,43 @@ class _CertificateValidationScreenState
     _lookupCertificate();
   }
 
-  void _lookupCertificate() {
-    final allCerts = LocalStorageService.getCertificates();
+  Future<void> _lookupCertificate() async {
     Map<String, dynamic>? found;
-    for (final c in allCerts) {
-      if (c['cert_code'] == widget.code) {
-        found = c;
-        break;
+
+    // Buscar certificado pelo serial — Supabase (público) ou localStorage
+    if (SupabaseConfig.useSupabaseAuth) {
+      found = await SupabaseCertificateService.validateBySerial(widget.code);
+    } else {
+      final allCerts = LocalStorageService.getCertificates();
+      for (final c in allCerts) {
+        if (c['cert_code'] == widget.code) {
+          found = c;
+          break;
+        }
       }
     }
 
     bool hashOk = false;
     if (found != null && found['hash'] != null) {
+      // Normalizar issued_at: Supabase retorna TIMESTAMPTZ que difere
+      // do formato Dart usado na geração do hash. Truncar para consistência.
+      String normalizedIssuedAt = found['issued_at'] ?? '';
+      final parsed = DateTime.tryParse(normalizedIssuedAt);
+      if (parsed != null) {
+        normalizedIssuedAt = parsed.toIso8601String();
+      }
+
       hashOk = CertificateHashService.verifyHash(
         serial: found['cert_code'] ?? '',
         cpf: found['student_cpf'] ?? '',
         courseId: found['course_id'] ?? '',
         quizScore: found['quiz_score'] ?? 0,
-        issuedAt: found['issued_at'] ?? '',
+        issuedAt: normalizedIssuedAt,
         storedHash: found['hash'] ?? '',
       );
     }
 
+    if (!mounted) return;
     setState(() {
       _cert = found;
       _hashValid = hashOk;
@@ -57,12 +74,15 @@ class _CertificateValidationScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F2F5),
+      backgroundColor: isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF0F2F5),
       appBar: AppBar(
         title: const Text('Validar Certificado'),
         centerTitle: true,
         backgroundColor: Colors.transparent,
+        foregroundColor: isDark ? Colors.white : Colors.black87,
         elevation: 0,
       ),
       body: Center(

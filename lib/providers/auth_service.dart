@@ -238,7 +238,7 @@ class AuthService {
           company: profile?['company'] as String?,
           role: profile?['role'] as String? ?? 'student',
         );
-        debugPrint('[AUTH] Sessão Supabase restaurada: ${user.email}');
+
       }
     } catch (e) {
       debugPrint('[AUTH] Restore session erro: $e');
@@ -269,7 +269,7 @@ class AuthService {
         role: profile?['role'] as String? ?? 'student',
       );
 
-      debugPrint('[AUTH] Login Supabase OK: ${response.user!.email}');
+
       return true;
     } catch (e) {
       debugPrint('[AUTH] Login Supabase erro: $e');
@@ -308,7 +308,7 @@ class AuthService {
         );
       }
 
-      debugPrint('[AUTH] Register Supabase OK: $email');
+
       return true;
     } catch (e) {
       debugPrint('[AUTH] Register Supabase erro: $e');

@@ -11,6 +11,8 @@ import '../services/certificate_eligibility_service.dart';
 import '../services/certificate_hash_service.dart';
 import '../services/course_service_mock.dart';
 import '../services/local_storage_service.dart';
+import '../services/supabase_certificate_service.dart';
+import '../core/config/supabase_config.dart';
 import '../widgets/certificate_eligibility_card.dart';
 
 /// Tela de certificado com validação de elegibilidade.
@@ -40,6 +42,7 @@ class _CertificateScreenState extends State<CertificateScreen> {
   String _instructorCrea = '';
   int? _resolvedQuizScore;
   double _resolvedProgress = 1.0;
+  Map<String, dynamic>? _storedCert; // Certificado do Supabase (permanente)
 
   @override
   void initState() {
@@ -63,6 +66,30 @@ class _CertificateScreenState extends State<CertificateScreen> {
       if (progress == 1.0 && enrollment['progress'] != null) {
         progress = (enrollment['progress'] as num).toDouble();
       }
+    }
+
+    // Carregar certificado do Supabase (se existir)
+    if (SupabaseConfig.useSupabaseAuth) {
+      _storedCert = await SupabaseCertificateService.getCertificate(widget.courseId);
+
+      // Se elegível mas sem certificado → EMITIR permanentemente (1ª vez)
+      if (_storedCert == null && progress >= 1.0 && (quizScore ?? 0) >= 70) {
+        final auth = AuthService.currentUser;
+        _storedCert = await SupabaseCertificateService.issueCertificate(
+          courseId: widget.courseId,
+          courseCode: course.code,
+          courseTitle: '${course.code} — ${course.title}',
+          courseHours: course.hours,
+          quizScore: quizScore ?? 0,
+          studentName: auth.username ?? 'Aluno',
+          studentCpf: auth.cpf,
+          company: auth.company,
+          instructorName: course.instructorName,
+          instructorCrea: course.instructorCrea,
+        );
+      }
+    } else {
+      _storedCert = LocalStorageService.getCertificate(widget.courseId);
     }
 
     setState(() {
@@ -157,22 +184,29 @@ class _CertificateScreenState extends State<CertificateScreen> {
     String? email,
     CertificateEligibilityResult eligibility,
   ) {
-    final now = DateTime.now();
-    final validUntil = DateTime(now.year + 2, now.month, now.day);
-    // Usar cert_code armazenado se existir (consistência com validação)
-    final storedCert = LocalStorageService.getCertificate(widget.courseId);
-    final certCode = storedCert?['cert_code'] as String? ??
-        'CRP-$_courseCode-${now.year}-${now.millisecond.toString().padLeft(4, '0')}';
+    final userId = AuthService.currentUser.userId ?? 'user-1';
+
+    // ═══ DADOS DO CERTIFICADO (já carregado ou emitido no _loadCourse) ═══
+    // O certificado já foi carregado do Supabase em _loadCourse.
+    // Se não existia, será emitido AGORA (1ª visualização).
+    // Após emissão, o serial NUNCA muda — como um documento oficial.
+    final storedCert = _storedCert;
+
+    // Dados do certificado — do Supabase (permanentes/imutáveis)
+    final certCode = storedCert?['cert_code'] as String? ?? 'PENDENTE';
+    final issuedAtStr = storedCert?['issued_at'] as String? ?? DateTime.now().toIso8601String();
+    final validUntilStr = storedCert?['valid_until'] as String? ?? DateTime.now().add(const Duration(days: 730)).toIso8601String();
+    final certStudentName = storedCert?['student_name'] as String? ?? studentName;
 
     final certificate = Certificate(
-      id: 'cert-${widget.courseId}',
-      userId: AuthService.currentUser.userId ?? 'user-1',
+      id: storedCert?['id']?.toString() ?? 'cert-${widget.courseId}',
+      userId: userId,
       courseId: widget.courseId,
       enrollmentId: 'enroll-${widget.courseId}',
       certificateCode: certCode,
-      issuedAt: now,
-      validUntil: validUntil,
-      studentName: studentName,
+      issuedAt: DateTime.tryParse(issuedAtStr) ?? DateTime.now(),
+      validUntil: DateTime.tryParse(validUntilStr) ?? DateTime.now().add(const Duration(days: 730)),
+      studentName: certStudentName,
       courseTitle: '$_courseCode — $_courseTitle',
       courseCode: _courseCode,
       courseHours: _courseHours,
@@ -505,11 +539,11 @@ class _CertificateScreenState extends State<CertificateScreen> {
   /// Funciona cross-platform: web abre diálogo de impressão/salvar,
   /// mobile abre share sheet nativo.
   void _downloadPdf(BuildContext context, Certificate cert, String? cpf, String? company) async {
-    debugPrint('[PDF] _downloadPdf chamado!');
+
     try {
-      debugPrint('[PDF] Gerando bytes...');
+
       final bytes = await _buildPdfBytes(cert, cpf, company);
-      debugPrint('[PDF] Bytes gerados: ${bytes.length}');
+
 
       final fileName = 'Certificado_${cert.certificateCode}.pdf';
 
@@ -518,10 +552,10 @@ class _CertificateScreenState extends State<CertificateScreen> {
         filename: fileName,
       );
 
-      debugPrint('[PDF] PDF compartilhado: $fileName');
+
     } catch (e, stack) {
-      debugPrint('[PDF] ERRO: $e');
-      debugPrint('[PDF] Stack: $stack');
+
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro ao gerar PDF: $e')),

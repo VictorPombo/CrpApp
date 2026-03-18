@@ -10,6 +10,17 @@ class CertificateHashService {
   // MOCK: Em produção, essa chave vem do backend (Supabase env var)
   static const _secretKey = 'CRP-ENG-2026-SECRET-K3Y-PR0D';
 
+  /// Normaliza uma data ISO 8601 para formato consistente (sem microssegundos
+  /// e sem timezone). Garante que o hash gerado no Dart e o hash verificado
+  /// com dados do Supabase (TIMESTAMPTZ) produzam o mesmo resultado.
+  static String _normalizeDate(String isoDate) {
+    final dt = DateTime.tryParse(isoDate);
+    if (dt == null) return isoDate;
+    // Truncar para segundos e remover timezone
+    return DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
+        .toIso8601String();
+  }
+
   /// Gera hash SHA-256 para um certificado.
   ///
   /// O hash é baseado em dados imutáveis do certificado + chave secreta,
@@ -21,7 +32,8 @@ class CertificateHashService {
     required int quizScore,
     required String issuedAt,
   }) {
-    final payload = '$serial|$cpf|$courseId|$quizScore|$issuedAt|$_secretKey';
+    final normalizedDate = _normalizeDate(issuedAt);
+    final payload = '$serial|$cpf|$courseId|$quizScore|$normalizedDate|$_secretKey';
     final bytes = utf8.encode(payload);
     final digest = sha256.convert(bytes);
     return digest.toString();
@@ -44,9 +56,15 @@ class CertificateHashService {
       cpf: cpf,
       courseId: courseId,
       quizScore: quizScore,
-      issuedAt: issuedAt,
+      issuedAt: issuedAt, // generateHash já normaliza internamente
     );
     return computedHash == storedHash;
+  }
+
+  /// Exibe hash truncado para UI (ex: SHA-256: 9a8c1f...)
+  static String shortHash(String hash) {
+    if (hash.length <= 12) return hash;
+    return '${hash.substring(0, 12)}...';
   }
 
   /// Gera número serial único para certificado.
@@ -64,6 +82,28 @@ class CertificateHashService {
     return 'CRP-$y-$code-$seq';
   }
 
+  /// Gera serial ÚNICO por usuário — como um RG do certificado.
+  ///
+  /// Formato: CRP-{ANO}-{CÓDIGO_CURSO}-{HASH_CURTO}
+  /// O hash é derivado do userId + courseId, garantindo que cada
+  /// usuário tenha um serial irrepetível para cada curso.
+  /// Exemplo: CRP-2026-NR10-A3F2B1
+  static String generateUniqueSerial({
+    required String courseCode,
+    required String userId,
+    required String courseId,
+    int? year,
+  }) {
+    final y = year ?? DateTime.now().year;
+    final code = courseCode.replaceAll('-', '').toUpperCase();
+    // Gerar hash curto do userId + courseId (6 chars hex uppercase)
+    final payload = '$userId|$courseId|$y|$_secretKey';
+    final bytes = utf8.encode(payload);
+    final digest = sha256.convert(bytes);
+    final shortId = digest.toString().substring(0, 6).toUpperCase();
+    return 'CRP-$y-$code-$shortId';
+  }
+
   /// Mascara CPF para exibição pública (LGPD).
   ///
   /// Entrada: "123.456.789-00"
@@ -71,11 +111,5 @@ class CertificateHashService {
   static String maskCpf(String cpf) {
     if (cpf.length < 14) return '***.***.***-**';
     return '***${cpf.substring(3, 11)}**';
-  }
-
-  /// Retorna hash parcial para exibição (primeiros 16 chars).
-  static String shortHash(String hash) {
-    if (hash.length <= 16) return hash;
-    return '${hash.substring(0, 16)}...';
   }
 }
